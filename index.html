@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilla de Evaluación por Equipo — Emprendimiento</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header institucional azul como en la plantilla Excel -->
+    <header class="bg-blue-600 text-white shadow-md no-print py-3 px-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <h1 class="text-base md:text-xl font-bold tracking-wider uppercase text-center w-full">PLANILLA DE EVALUACIÓN POR EQUIPO — EMPRENDIMIENTO</h1>
+            <div class="flex items-center space-x-2 shrink-0">
+                <button onclick="app.resetData()" title="Reiniciar datos de fábrica" class="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="hidden sm:inline">Reiniciar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Pestañas de navegación de las Hojas de Excel -->
+    <div class="bg-slate-200 border-b border-slate-300 no-print">
+        <div class="max-w-6xl mx-auto px-4">
+            <nav class="flex space-x-2 py-2" aria-label="Hojas de Trabajo">
+                <button id="tab-btn-evaluacion" onclick="app.switchTab('evaluacion')" 
+                        class="px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-white text-blue-700 shadow-xs border-t-2 border-blue-600 flex items-center space-x-2 transition-all">
+                    <i class="fa-solid fa-table-cells"></i>
+                    <span>Hoja 1: Evaluación por Equipo</span>
+                </button>
+                <button id="tab-btn-comparativo" onclick="app.switchTab('comparativo')" 
+                        class="px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-slate-300 text-slate-700 hover:bg-white/60 flex items-center space-x-2 transition-all">
+                    <i class="fa-solid fa-ranking-star"></i>
+                    <span>Hoja 2: Comparativo por Grado</span>
+                    <span id="comparative-count-badge" class="ml-1 px-1.5 py-0.2 bg-blue-600 text-white text-xs rounded-full">0</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+
+        <!-- ================= HOJA 1: EVALUACIÓN ================= -->
+        <section id="tab-evaluacion" class="tab-content space-y-6">
+            <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden">
+                
+                <!-- Encabezado interno de la hoja -->
+                <div class="bg-blue-700 text-white py-2.5 px-4 text-center font-bold text-sm tracking-wider uppercase">
+                    PLANILLA DE EVALUACIÓN POR EQUIPO — EMPRENDIMIENTO
+                </div>
+
+                <!-- Metadatos: Selección exclusiva de Grados (6A, 6B, 7A, 7B) y Nombre -->
+                <div class="grid grid-cols-1 md:grid-cols-12 bg-blue-100/70 border-b border-blue-200 p-4 gap-4 items-center">
+                    <div class="md:col-span-4 flex items-center space-x-3">
+                        <label for="input-grado" class="font-bold text-xs text-blue-950 uppercase shrink-0">Grado / Salón:</label>
+                        <select id="input-grado" onchange="app.onGradeChange()" 
+                                class="w-full bg-white border border-blue-400 font-semibold text-blue-900 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+                            <option value="6A">6A</option>
+                            <option value="6B">6B</option>
+                            <option value="7A">7A</option>
+                            <option value="7B">7B</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-8 flex items-center space-x-3">
+                        <label for="input-nombre" class="font-bold text-xs text-blue-950 uppercase shrink-0">Nombre del emprendimiento:</label>
+                        <select id="input-nombre" onchange="app.updateMetadata()" 
+                                class="w-full bg-white border border-blue-400 rounded px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+                            <!-- Opciones cargadas dinámicamente según el grado -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabla de Criterios Exacta de la Rúbrica Original -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-700 border-collapse">
+                        <thead class="text-xs text-white uppercase bg-slate-800">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 border-r border-slate-700 w-1/4">Criterio</th>
+                                <th scope="col" class="px-4 py-3 border-r border-slate-700 w-2/4">¿Qué se evalúa?</th>
+                                <th scope="col" class="px-4 py-3 border-r border-slate-700 text-center w-24">Peso</th>
+                                <th scope="col" class="px-4 py-3 text-center w-36">Calificación (1 a 5)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evaluation-tbody" class="divide-y divide-slate-200">
+                            <!-- Inyectado dinámicamente -->
+                        </tbody>
+                        <tfoot class="bg-blue-600 text-white font-bold">
+                            <tr>
+                                <td colspan="2" class="px-4 py-3 uppercase tracking-wider text-sm border-r border-blue-500">
+                                    Calificación final ponderada
+                                </td>
+                                <td id="total-weight-cell" class="px-4 py-3 text-center border-r border-blue-500">100%</td>
+                                <td id="total-score-cell" class="px-4 py-3 text-center text-xl font-black bg-blue-800">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Observaciones del docente -->
+                <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
+                    <label for="input-observaciones" class="block font-bold text-xs text-slate-700 uppercase">Observaciones del docente:</label>
+                    <textarea id="input-observaciones" rows="3" oninput="app.updateMetadata()" placeholder="Escriba las observaciones y retroalimentación para este equipo..." 
+                              class="w-full bg-white border border-slate-300 rounded p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+
+                <!-- Botones "GUARDAR NOTA" y "LIMPIAR" -->
+                <div class="p-4 bg-slate-100 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3">
+                    <span id="editing-indicator" class="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded border border-amber-300 hidden">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> Modificando evaluación existente
+                    </span>
+                    <div class="flex items-center space-x-3 ml-auto">
+                        <button onclick="app.clearForm()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs uppercase rounded shadow transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-eraser"></i>
+                            <span>Limpiar</span>
+                        </button>
+                        <button onclick="app.saveCurrentGrade()" class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs uppercase rounded shadow-md transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Guardar Nota</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instrucciones exactas -->
+            <div class="bg-white rounded-lg shadow-sm border border-slate-300 p-4 text-xs text-slate-600 space-y-1">
+                <span class="font-bold uppercase text-slate-800 block mb-1">Instrucciones:</span>
+                <p>1. Seleccione el <strong>Grado / Salón</strong> (6A, 6B, 7A o 7B) y elija el nombre del emprendimiento correspondiente.</p>
+                <p>2. Ingrese la nota de 1.0 a 5.0 para cada criterio pedagógico.</p>
+                <p>3. Al presionar <strong>"Guardar Nota"</strong>, el resultado se registrará en la Hoja de Comparativo ubicándolo en el <strong>puesto (ranking) exclusivo de su salón</strong>.</p>
+            </div>
+        </section>
+
+        <!-- ================= HOJA 2: COMPARATIVO AGRUPADO POR GRADO ================= -->
+        <section id="tab-comparativo" class="tab-content space-y-6 hidden">
+            
+            <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden">
+                <div class="bg-blue-700 text-white py-3 px-4 text-center font-bold text-base tracking-wider uppercase">
+                    COMPARATIVO DE CALIFICACIONES DE LOS EMPRENDIMIENTOS
+                </div>
+
+                <!-- Barra de herramientas y filtros por salón -->
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3 w-full md:w-auto">
+                        <label for="filter-grado" class="font-bold text-xs text-slate-700 uppercase shrink-0">Filtrar Salón:</label>
+                        <select id="filter-grado" onchange="app.renderComparativeTab()" class="bg-white border border-slate-300 font-bold text-blue-900 rounded px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="TODOS">Todos los salones (6A, 6B, 7A, 7B)</option>
+                            <option value="6A">Salón 6A</option>
+                            <option value="6B">Salón 6B</option>
+                            <option value="7A">Salón 7A</option>
+                            <option value="7B">Salón 7B</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                        <button onclick="app.exportCSV()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>Exportar CSV</span>
+                        </button>
+                        <button onclick="app.clearAllComparisons()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Limpiar Todo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenedor dinámico de tablas agrupadas por salón -->
+                <div id="comparative-tables-container" class="p-4 space-y-8">
+                    <!-- Generado dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Gráfico de Rendimiento por Salón -->
+            <div class="bg-white rounded-lg shadow-md border border-slate-300 p-5">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-column text-blue-600"></i>
+                        <span>Promedio y Calificaciones por Salón</span>
+                    </h3>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="comparativeChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-white border-t border-slate-300 py-3 mt-auto text-center text-xs text-slate-500 no-print">
+        Plantilla de Evaluación por Equipo — Emprendimiento por Salones (6A, 6B, 7A, 7B)
+    </footer>
+
+    <!-- Notificaciones Toast -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3 border border-slate-700">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">Operación realizada con éxito.</span>
+        </div>
+    </div>
+
+    <!-- Lógica de la Aplicación -->
+    <script>
+        // Salones válidos solicitados
+        const ALLOWED_GRADES = ['6A', '6B', '7A', '7B'];
+
+        // Emprendimientos por grado según el documento oficial
+        const GRADE_PROJECTS_LIST = {
+            '6A': [
+                'Galletas rellenas',
+                'Micheladas',
+                'Ensalada de frutas con gomitas y tahin',
+                'Manillas'
+            ],
+            '6B': [
+                'Bolis',
+                'Manillas – 1',
+                'Postre fresas con crema',
+                'Manillas - 2',
+                'Velas aromáticas'
+            ],
+            '7A': [
+                'Gomitas enchiladas',
+                'Dorilocos',
+                'Lazos para cabellos',
+                'Postre de oreo'
+            ],
+            '7B': [
+                'Choco Drago',
+                'Mango bravo',
+                'Manillas – 2',
+                'Manillas – 1',
+                'Cartucheras',
+                'Postres Galleta Oreo'
+            ]
+        };
+
+        // Criterios y pesos exactos de la rúbrica original (Suma 100%)
+        const DEFAULT_CRITERIA = [
+            { id: 'c1', name: 'Producto o prototipo', description: 'Calidad, creatividad, originalidad, presentación y cumplimiento del propósito. En alimentar: apariencia, preparación e higiene; en productos artesanales: materiales, elaboración y acabados. Coherencia con la idea de negocio.', weight: 30 },
+            { id: 'c2', name: 'Exposición oral', description: 'Claridad, fluidez y seguridad; dominio del tema; explicación del nombre, propósito, características, público, proceso de elaboración y ventajas. Participación de los integrantes y respuesta a preguntas.', weight: 25 },
+            { id: 'c3', name: 'Diapositivas y material visual', description: 'Organización, secuencia lógica, diseño, legibilidad, ortografía, imágenes y recursos gráficos. Información relevante y diapositivas que apoyen la exposición sin saturarse de texto.', weight: 15 },
+            { id: 'c4', name: 'Documentar y evidenciar', description: 'Organización y cumplimiento de documentar: descripción, nombre comercial, objetivo, materiales, proceso, presupuesto, costos, precio de venta y evidencias del trabajo, según lo solicitado.', weight: 20 },
+            { id: 'c5', name: 'Trabajo en equipo y responsabilidad', description: 'Participación activa, distribución de funciones, colaboración, respeto, cumplimiento de responsabilidades, organización, puntualidad y conocimiento del proyecto por parte de los integrantes.', weight: 10 }
+        ];
+
+        class EntrepreneurshipApp {
+            constructor() {
+                this.storageKeyGrades = 'emprendimiento_grades_salones_v2';
+                this.storageKeyForm = 'emprendimiento_form_salones_v2';
+                
+                this.activeTab = 'evaluacion';
+                this.criteria = DEFAULT_CRITERIA;
+                this.comparativeList = [];
+                this.editingId = null;
+
+                // Estado por defecto del formulario de evaluación
+                this.formState = {
+                    grado: '6A',
+                    nombre: '',
+                    observaciones: '',
+                    ratings: { 'c1': '', 'c2': '', 'c3': '', 'c4': '', 'c5': '' }
+                };
+
+                this.chartInstance = null;
+                this.init();
+            }
+
+            init() {
+                this.loadData();
+                this.renderEvaluationTable();
+                this.renderFormState();
+                this.renderComparativeTab();
+                this.initChart();
+            }
+
+            // --- CARGA Y PERSISTENCIA DE DATOS ---
+            loadData() {
+                const savedGrades = localStorage.getItem(this.storageKeyGrades);
+                if (savedGrades) {
+                    try {
+                        this.comparativeList = JSON.parse(savedGrades);
+                    } catch (e) {
+                        this.comparativeList = [];
+                    }
+                } else {
+                    // Datos iniciales de demostración organizados por salones
+                    this.comparativeList = [
+                        { id: 'p_6a_1', grado: '6A', nombre: 'Galletas rellenas', notaFinal: 4.65, ratings: { 'c1': 4.8, 'c2': 4.5, 'c3': 4.5, 'c4': 4.7, 'c5': 4.8 }, observaciones: 'Excelente prototipo y desenvolvimiento.', fecha: new Date().toISOString() },
+                        { id: 'p_6b_1', grado: '6B', nombre: 'Bolis', notaFinal: 4.45, ratings: { 'c1': 4.5, 'c2': 4.4, 'c3': 4.2, 'c4': 4.6, 'c5': 4.5 }, observaciones: 'Gran sustentación del presupuesto.', fecha: new Date().toISOString() },
+                        { id: 'p_7a_1', grado: '7A', nombre: 'Dorilocos', notaFinal: 4.80, ratings: { 'c1': 5.0, 'c2': 4.8, 'c3': 4.5, 'c4': 4.7, 'c5': 5.0 }, observaciones: 'Sobresaliente en todos los aspectos.', fecha: new Date().toISOString() },
+                        { id: 'p_7b_1', grado: '7B', nombre: 'Choco Drago', notaFinal: 4.30, ratings: { 'c1': 4.2, 'c2': 4.5, 'c3': 4.0, 'c4': 4.4, 'c5': 4.5 }, observaciones: 'Muy buena higiene y empaque.', fecha: new Date().toISOString() }
+                    ];
+                    this.saveComparativeData();
+                }
+
+                const savedForm = localStorage.getItem(this.storageKeyForm);
+                if (savedForm) {
+                    try {
+                        this.formState = JSON.parse(savedForm);
+                        if (!ALLOWED_GRADES.includes(this.formState.grado)) {
+                            this.formState.grado = '6A';
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            saveComparativeData() {
+                localStorage.setItem(this.storageKeyGrades, JSON.stringify(this.comparativeList));
+            }
+
+            saveFormState() {
+                localStorage.setItem(this.storageKeyForm, JSON.stringify(this.formState));
+            }
+
+            // --- ACTUALIZAR OPCIONES DE EMPRENDIMIENTO SEGÚN EL GRADO ---
+            updateEntrepreneurshipDropdown(selectedName = '') {
+                const gradoSelect = document.getElementById('input-grado');
+                const nombreSelect = document.getElementById('input-nombre');
+                const currentGrade = gradoSelect.value;
+                const projects = GRADE_PROJECTS_LIST[currentGrade] || [];
+
+                let html = '<option value="">-- Seleccione el emprendimiento --</option>';
+                projects.forEach(proj => {
+                    const selected = proj === selectedName ? 'selected' : '';
+                    html += `<option value="${proj}" ${selected}>${proj}</option>`;
+                });
+                nombreSelect.innerHTML = html;
+            }
+
+            onGradeChange() {
+                this.updateMetadata();
+                this.updateEntrepreneurshipDropdown();
+            }
+
+            // --- CÁLCULOS PONDERADOS ---
+            calculateFinalScore() {
+                let totalScore = 0;
+                let totalWeight = 0;
+
+                this.criteria.forEach(c => {
+                    const val = this.formState.ratings[c.id];
+                    const rating = (val !== '' && val !== undefined && !isNaN(val)) ? parseFloat(val) : 0;
+                    const weight = c.weight;
+                    totalScore += rating * (weight / 100);
+                    totalWeight += weight;
+                });
+
+                return {
+                    score: totalScore,
+                    weight: totalWeight
+                };
+            }
+
+            // --- RENDERIZADO DE EVALUACIÓN ---
+            renderEvaluationTable() {
+                const tbody = document.getElementById('evaluation-tbody');
+                let html = '';
+
+                this.criteria.forEach(c => {
+                    const rating = (this.formState.ratings[c.id] !== undefined && this.formState.ratings[c.id] !== '') ? this.formState.ratings[c.id] : '';
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-4 py-3 font-bold text-slate-800 border-r border-slate-200">
+                                ${c.name}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-slate-600 border-r border-slate-200 leading-relaxed">
+                                ${c.description}
+                            </td>
+                            <td class="px-4 py-3 text-center font-bold text-slate-700 border-r border-slate-200">
+                                ${c.weight}%
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <input type="number" min="1.0" max="5.0" step="0.1" 
+                                       value="${rating}" 
+                                       placeholder="—"
+                                       onchange="app.updateRating('${c.id}', this.value)"
+                                       oninput="app.updateRating('${c.id}', this.value)"
+                                       class="w-24 text-center font-extrabold bg-white border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded p-1.5 text-base shadow-2xs">
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+                this.updateScoreDisplay();
+            }
+
+            renderFormState() {
+                document.getElementById('input-grado').value = this.formState.grado || '6A';
+                this.updateEntrepreneurshipDropdown(this.formState.nombre);
+                document.getElementById('input-observaciones').value = this.formState.observaciones || '';
+            }
+
+            updateScoreDisplay() {
+                const result = this.calculateFinalScore();
+                document.getElementById('total-score-cell').textContent = result.score.toFixed(2);
+                document.getElementById('total-weight-cell').textContent = result.weight + '%';
+            }
+
+            updateRating(criteriaId, val) {
+                if (val === '' || val === null) {
+                    this.formState.ratings[criteriaId] = '';
+                } else {
+                    let num = parseFloat(val);
+                    if (isNaN(num)) num = '';
+                    else if (num < 1.0) num = 1.0;
+                    else if (num > 5.0) num = 5.0;
+                    this.formState.ratings[criteriaId] = num;
+                }
+                this.saveFormState();
+                this.updateScoreDisplay();
+            }
+
+            updateMetadata() {
+                this.formState.grado = document.getElementById('input-grado').value;
+                this.formState.nombre = document.getElementById('input-nombre').value;
+                this.formState.observaciones = document.getElementById('input-observaciones').value;
+                this.saveFormState();
+            }
+
+            // --- GUARDAR NOTA Y ACTUALIZAR COMPARATIVO ---
+            saveCurrentGrade() {
+                this.updateMetadata();
+
+                if (!this.formState.nombre.trim()) {
+                    alert('Por favor seleccione el nombre del emprendimiento.');
+                    return;
+                }
+
+                const finalCalc = this.calculateFinalScore();
+                const recordId = this.editingId || ('proj_' + Date.now());
+
+                const gradeRecord = {
+                    id: recordId,
+                    grado: this.formState.grado, 
+                    nombre: this.formState.nombre.trim(),
+                    notaFinal: parseFloat(finalCalc.score.toFixed(2)),
+                    ratings: { ...this.formState.ratings },
+                    observaciones: this.formState.observaciones.trim() || 'Sin observaciones.',
+                    fecha: new Date().toISOString()
+                };
+
+                const existingIndex = this.comparativeList.findIndex(item => item.id === recordId);
+
+                if (existingIndex >= 0) {
+                    this.comparativeList[existingIndex] = gradeRecord;
+                    this.showToast(`¡Nota actualizada para el salón ${gradeRecord.grado}!`);
+                } else {
+                    this.comparativeList.push(gradeRecord);
+                    this.showToast(`¡Nota guardada en el salón ${gradeRecord.grado}!`);
+                }
+
+                this.saveComparativeData();
+                this.clearForm(false);
+                this.renderComparativeTab();
+                this.updateChart();
+
+                this.switchTab('comparativo');
+            }
+
+            clearForm(confirmUser = true) {
+                if (confirmUser && !confirm('¿Desea limpiar los campos del formulario?')) {
+                    return;
+                }
+                
+                this.editingId = null;
+                document.getElementById('editing-indicator').classList.add('hidden');
+
+                this.formState = {
+                    grado: this.formState.grado || '6A',
+                    nombre: '',
+                    observaciones: '',
+                    ratings: { 'c1': '', 'c2': '', 'c3': '', 'c4': '', 'c5': '' }
+                };
+
+                this.saveFormState();
+                this.renderEvaluationTable();
+                this.renderFormState();
+            }
+
+            // --- RENDERIZADO DEL COMPARATIVO AGRUPADO POR SALÓN CON RANKING EXCLUSIVO ---
+            renderComparativeTab() {
+                const container = document.getElementById('comparative-tables-container');
+                const filterGrade = document.getElementById('filter-grado').value;
+                const badge = document.getElementById('comparative-count-badge');
+                
+                badge.textContent = this.comparativeList.length;
+
+                if (this.comparativeList.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-400">
+                            <i class="fa-solid fa-folder-open text-4xl mb-3"></i>
+                            <p class="text-sm">No hay registros guardados. Ingrese calificaciones en la Hoja 1 y presione "Guardar Nota".</p>
+                        </div>`;
+                    return;
+                }
+
+                const targetGrades = filterGrade === 'TODOS' ? ALLOWED_GRADES : [filterGrade];
+                let html = '';
+
+                targetGrades.forEach(grado => {
+                    const roomProjects = this.comparativeList
+                        .filter(item => item.grado === grado)
+                        .sort((a, b) => b.notaFinal - a.notaFinal);
+
+                    if (filterGrade !== 'TODOS' && roomProjects.length === 0) {
+                        html += `
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center text-slate-500">
+                                No hay emprendimientos registrados en el salón <strong>${grado}</strong>.
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    if (roomProjects.length === 0) return;
+
+                    html += `
+                        <div class="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                            <div class="bg-slate-800 text-white px-4 py-2.5 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="bg-blue-600 text-white font-black text-xs px-2.5 py-1 rounded">SALÓN ${grado}</span>
+                                    <span class="text-xs text-slate-300 font-medium">(${roomProjects.length} ${roomProjects.length === 1 ? 'emprendimiento' : 'emprendimientos'})</span>
+                                </div>
+                                <span class="text-xs text-slate-300 font-semibold">Ranking exclusivo de ${grado}</span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-slate-700 border-collapse">
+                                    <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                        <tr>
+                                            <th scope="col" class="px-4 py-2.5 border-r border-slate-200 w-24 text-center">Puesto</th>
+                                            <th scope="col" class="px-4 py-2.5 border-r border-slate-200">Nombre del emprendimiento</th>
+                                            <th scope="col" class="px-4 py-2.5 border-r border-slate-200 w-28 text-center">Nota Final</th>
+                                            <th scope="col" class="px-4 py-2.5 border-r border-slate-200">Observaciones</th>
+                                            <th scope="col" class="px-4 py-2.5 text-center w-28">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                    `;
+
+                    roomProjects.forEach((item, index) => {
+                        const puesto = index + 1;
+
+                        let puestoBadge = `<span class="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded text-xs border border-slate-300">#${puesto}</span>`;
+                        if (puesto === 1) puestoBadge = `<span class="px-2.5 py-1 bg-amber-100 text-amber-900 font-black rounded text-xs border border-amber-400"><i class="fa-solid fa-trophy mr-1 text-amber-500"></i> #1</span>`;
+                        else if (puesto === 2) puestoBadge = `<span class="px-2.5 py-1 bg-slate-200 text-slate-800 font-bold rounded text-xs border border-slate-400"><i class="fa-solid fa-medal mr-1 text-slate-500"></i> #2</span>`;
+                        else if (puesto === 3) puestoBadge = `<span class="px-2.5 py-1 bg-orange-100 text-orange-900 font-bold rounded text-xs border border-orange-300"><i class="fa-solid fa-award mr-1 text-orange-600"></i> #3</span>`;
+
+                        let noteClass = 'text-blue-700 font-extrabold';
+                        if (item.notaFinal >= 4.5) noteClass = 'text-emerald-700 font-extrabold';
+                        else if (item.notaFinal < 3.0) noteClass = 'text-rose-600 font-extrabold';
+
+                        html += `
+                            <tr class="hover:bg-blue-50/40 transition-colors">
+                                <td class="px-4 py-3 text-center border-r border-slate-200">${puestoBadge}</td>
+                                <td class="px-4 py-3 font-bold text-slate-900 border-r border-slate-200">${item.nombre}</td>
+                                <td class="px-4 py-3 text-center text-base border-r border-slate-200 ${noteClass}">${item.notaFinal.toFixed(2)}</td>
+                                <td class="px-4 py-3 text-xs text-slate-600 border-r border-slate-200">${item.observaciones}</td>
+                                <td class="px-4 py-3 text-center space-x-1">
+                                    <button onclick="app.editComparisonItem('${item.id}')" title="Editar / Cargar en Hoja 1" class="p-1.5 text-blue-600 hover:text-blue-800 rounded transition-colors">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button onclick="app.deleteComparisonItem('${item.id}')" title="Eliminar registro" class="p-1.5 text-rose-500 hover:text-rose-700 rounded transition-colors">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            }
+
+            // --- ACCIONES DE EDICIÓN Y ELIMINACIÓN ---
+            editComparisonItem(id) {
+                const item = this.comparativeList.find(i => i.id === id);
+                if (!item) return;
+
+                this.editingId = item.id;
+                document.getElementById('editing-indicator').classList.remove('hidden');
+
+                this.formState = {
+                    grado: item.grado,
+                    nombre: item.nombre,
+                    observaciones: item.observaciones,
+                    ratings: item.ratings ? { ...item.ratings } : { 'c1': '', 'c2': '', 'c3': '', 'c4': '', 'c5': '' }
+                };
+
+                this.saveFormState();
+                this.renderEvaluationTable();
+                this.renderFormState();
+                this.switchTab('evaluacion');
+                this.showToast(`Cargado ${item.nombre} de ${item.grado} para editar.`);
+            }
+
+            deleteComparisonItem(id) {
+                if (confirm('¿Desea eliminar este emprendimiento del registro?')) {
+                    this.comparativeList = this.comparativeList.filter(item => item.id !== id);
+                    this.saveComparativeData();
+                    this.renderComparativeTab();
+                    this.updateChart();
+                    this.showToast('Registro eliminado.');
+                }
+            }
+
+            clearAllComparisons() {
+                if (confirm('¿Está seguro de borrar todos los emprendimientos de todos los salones?')) {
+                    this.comparativeList = [];
+                    this.saveComparativeData();
+                    this.renderComparativeTab();
+                    this.updateChart();
+                    this.showToast('Todos los datos fueron borrados.');
+                }
+            }
+
+            // --- NAVEGACIÓN DE PESTAÑAS ---
+            switchTab(tabName) {
+                this.activeTab = tabName;
+
+                const btnEval = document.getElementById('tab-btn-evaluacion');
+                const btnComp = document.getElementById('tab-btn-comparativo');
+
+                if (tabName === 'evaluacion') {
+                    btnEval.className = "px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-white text-blue-700 shadow-xs border-t-2 border-blue-600 flex items-center space-x-2 transition-all";
+                    btnComp.className = "px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-slate-300 text-slate-700 hover:bg-white/60 flex items-center space-x-2 transition-all";
+                } else {
+                    btnComp.className = "px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-white text-blue-700 shadow-xs border-t-2 border-blue-600 flex items-center space-x-2 transition-all";
+                    btnEval.className = "px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-slate-300 text-slate-700 hover:bg-white/60 flex items-center space-x-2 transition-all";
+                    this.updateChart();
+                }
+
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            }
+
+            // --- GRÁFICO COMPARATIVO POR SALÓN ---
+            initChart() {
+                const ctx = document.getElementById('comparativeChart').getContext('2d');
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Nota Final',
+                            data: [],
+                            backgroundColor: [],
+                            borderColor: [],
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 5.0,
+                                ticks: { stepSize: 1.0 }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+                this.updateChart();
+            }
+
+            updateChart() {
+                if (!this.chartInstance) return;
+
+                const filterGrade = document.getElementById('filter-grado')?.value || 'TODOS';
+                let items = [...this.comparativeList];
+
+                if (filterGrade !== 'TODOS') {
+                    items = items.filter(i => i.grado === filterGrade);
+                }
+
+                items.sort((a, b) => b.notaFinal - a.notaFinal);
+
+                const colors = {
+                    '6A': { bg: 'rgba(37, 99, 235, 0.8)', border: '#1d4ed8' },
+                    '6B': { bg: 'rgba(16, 185, 129, 0.8)', border: '#059669' },
+                    '7A': { bg: 'rgba(245, 158, 11, 0.8)', border: '#d97706' },
+                    '7B': { bg: 'rgba(139, 92, 246, 0.8)', border: '#7c3aed' }
+                };
+
+                this.chartInstance.data.labels = items.map(i => `${i.nombre} (${i.grado})`);
+                this.chartInstance.data.datasets[0].data = items.map(i => i.notaFinal);
+                this.chartInstance.data.datasets[0].backgroundColor = items.map(i => colors[i.grado]?.bg || 'rgba(37, 99, 235, 0.8)');
+                this.chartInstance.data.datasets[0].borderColor = items.map(i => colors[i.grado]?.border || '#1d4ed8');
+                this.chartInstance.update();
+            }
+
+            // --- EXPORTAR CSV CON AGRUPACIÓN ---
+            exportCSV() {
+                if (this.comparativeList.length === 0) {
+                    alert('No hay registros para exportar.');
+                    return;
+                }
+
+                let csv = "Salon/Grado,Puesto en Salon,Nombre del Emprendimiento,Nota Final,Observaciones\n";
+                
+                ALLOWED_GRADES.forEach(grado => {
+                    const roomProjects = this.comparativeList
+                        .filter(item => item.grado === grado)
+                        .sort((a, b) => b.notaFinal - a.notaFinal);
+
+                    roomProjects.forEach((item, index) => {
+                        csv += `"${item.grado}",${index + 1},"${item.nombre}",${item.notaFinal},"${item.observaciones.replace(/"/g, '""')}"\n`;
+                    });
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `comparativo_emprendimientos_salones_${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                this.showToast('CSV exportado por salones.');
+            }
+
+            resetData() {
+                if (confirm('¿Desea restablecer todos los datos a la configuración inicial?')) {
+                    localStorage.removeItem(this.storageKeyGrades);
+                    localStorage.removeItem(this.storageKeyForm);
+                    location.reload();
+                }
+            }
+
+            showToast(message) {
+                const toast = document.getElementById('toast-notification');
+                document.getElementById('toast-message').textContent = message;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        }
+
+        let app;
+        window.addEventListener('DOMContentLoaded', () => {
+            app = new EntrepreneurshipApp();
+        });
+    </script>
+</body>
+</html>
