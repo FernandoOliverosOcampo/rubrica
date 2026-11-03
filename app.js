@@ -37,7 +37,10 @@ class RubricManager {
     async signUp(email, password, nombre) {
         const { data, error } = await supabaseClient.auth.signUp({
             email,
-            password
+            password,
+            options: {
+                emailRedirectTo: window.location.origin + '/login.html'
+            }
         });
         if (error) throw error;
         this.currentUser = data.user;
