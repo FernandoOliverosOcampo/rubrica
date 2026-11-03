@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrador de Rúbricas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md py-3 px-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <h1 class="text-base md:text-xl font-bold tracking-wider uppercase text-center w-full">Administrador de Rúbricas</h1>
+            <div class="flex items-center space-x-2 shrink-0">
+                <a href="index.html" class="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                    <i class="fa-solid fa-home"></i>
+                    <span class="hidden sm:inline">Inicio</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+
+        <!-- Lista de Rúbricas -->
+        <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden mb-6">
+            <div class="bg-blue-700 text-white py-3 px-4 flex items-center justify-between">
+                <h2 class="font-bold text-sm tracking-wider uppercase">Mis Rúbricas</h2>
+                <button onclick="admin.openCreateModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded shadow transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Nueva Rúbrica</span>
+                </button>
+            </div>
+
+            <div id="rubrics-list" class="p-4 space-y-3">
+                <!-- Rúbricas cargadas dinámicamente -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Crear/Editar Rúbrica -->
+    <div id="rubric-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="bg-blue-700 text-white py-3 px-4 flex items-center justify-between">
+                <h3 id="modal-title" class="font-bold text-sm tracking-wider uppercase">Nueva Rúbrica</h3>
+                <button onclick="admin.closeModal()" class="text-white hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- Información básica -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block font-bold text-xs text-slate-700 uppercase mb-1">Nombre de la Rúbrica</label>
+                        <input type="text" id="rubric-name" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ej: Rúbrica de Proyectos de Ciencias">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-slate-700 uppercase mb-1">Descripción</label>
+                        <textarea id="rubric-description" rows="2" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Descripción breve del propósito de esta rúbrica"></textarea>
+                    </div>
+                </div>
+
+                <!-- Grados y Proyectos -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-xs text-slate-700 uppercase">Grados/Salones y Proyectos</h4>
+                        <button onclick="admin.addGrade()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Agregar Grado</span>
+                        </button>
+                    </div>
+                    <div id="grades-list" class="space-y-3">
+                        <!-- Grados cargados dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Criterios -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-xs text-slate-700 uppercase">Criterios de Evaluación</h4>
+                        <button onclick="admin.addCriteria()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Agregar Criterio</span>
+                        </button>
+                    </div>
+                    <div id="criteria-list" class="space-y-3">
+                        <!-- Criterios cargados dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-100 border-t border-slate-200 p-4 flex justify-end space-x-3">
+                <button onclick="admin.closeModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs uppercase rounded shadow transition-all">
+                    Cancelar
+                </button>
+                <button onclick="admin.saveRubric()" class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs uppercase rounded shadow-md transition-all">
+                    Guardar Rúbrica
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Rúbrica -->
+    <div id="view-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="bg-blue-700 text-white py-3 px-4 flex items-center justify-between">
+                <h3 id="view-modal-title" class="font-bold text-sm tracking-wider uppercase">Ver Rúbrica</h3>
+                <button onclick="admin.closeViewModal()" class="text-white hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="view-rubric-content">
+                    <!-- Contenido de la rúbrica -->
+                </div>
+            </div>
+
+            <div class="bg-slate-100 border-t border-slate-200 p-4 flex justify-between">
+                <button onclick="admin.editFromView()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase rounded shadow transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-pen"></i>
+                    <span>Editar</span>
+                </button>
+                <div class="flex space-x-3">
+                    <a id="use-rubric-link" href="#" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase rounded shadow-md transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Usar esta Rúbrica</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3 border border-slate-700">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">Operación realizada con éxito.</span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        class AdminApp {
+            constructor() {
+                this.currentRubricId = null;
+                this.editingRubricId = null;
+                this.criteriaCounter = 0;
+                this.init();
+            }
+
+            async init() {
+                const yearElement = document.getElementById('current-year');
+                if (yearElement) {
+                    yearElement.textContent = new Date().getFullYear();
+                }
+                await rubricManager.init();
+                if (!rubricManager.getCurrentUser()) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                this.renderRubricsList();
+            }
+
+            // --- RENDERIZADO DE LISTA DE RÚBRICAS ---
+            renderRubricsList() {
+                const container = document.getElementById('rubrics-list');
+                const rubrics = rubricManager.getAllRubrics();
+
+                if (rubrics.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-400">
+                            <i class="fa-solid fa-folder-open text-4xl mb-3"></i>
+                            <p class="text-sm">No hay rúbricas creadas. Crea tu primera rúbrica.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                rubrics.forEach(rubric => {
+                    const totalWeight = rubric.criterios.reduce((sum, c) => sum + c.weight, 0);
+                    const fecha = new Date(rubric.updated_at || rubric.created_at).toLocaleDateString('es-ES');
+                    
+                    html += `
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-slate-900 text-sm mb-1">${rubric.nombre}</h3>
+                                    <p class="text-xs text-slate-600 mb-2">${rubric.descripcion}</p>
+                                    <div class="flex items-center space-x-4 text-xs text-slate-500">
+                                        <span><i class="fa-solid fa-list-check mr-1"></i> ${rubric.criterios.length} criterios</span>
+                                        <span><i class="fa-solid fa-percent mr-1"></i> Peso total: ${totalWeight}%</span>
+                                        <span><i class="fa-solid fa-calendar mr-1"></i> ${fecha}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <button onclick="admin.viewRubric('${rubric.id}')" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Ver">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                    <button onclick="admin.editRubric('${rubric.id}')" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Editar">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button onclick="admin.deleteRubric('${rubric.id}')" class="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Eliminar">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            }
+
+            // --- MODAL CREAR/EDITAR ---
+            openCreateModal() {
+                this.editingRubricId = null;
+                document.getElementById('modal-title').textContent = 'Nueva Rúbrica';
+                document.getElementById('rubric-name').value = '';
+                document.getElementById('rubric-description').value = '';
+                document.getElementById('grades-list').innerHTML = '';
+                document.getElementById('criteria-list').innerHTML = '';
+                this.criteriaCounter = 0;
+                this.addGrade();
+                this.addCriteria();
+                document.getElementById('rubric-modal').classList.remove('hidden');
+            }
+
+            editRubric(id) {
+                const rubric = rubricManager.getRubric(id);
+                if (!rubric) return;
+
+                this.editingRubricId = id;
+                document.getElementById('modal-title').textContent = 'Editar Rúbrica';
+                document.getElementById('rubric-name').value = rubric.nombre;
+                document.getElementById('rubric-description').value = rubric.descripcion;
+                document.getElementById('grades-list').innerHTML = '';
+                document.getElementById('criteria-list').innerHTML = '';
+                this.criteriaCounter = 0;
+
+                // Cargar grados
+                if (rubric.grados && Object.keys(rubric.grados).length > 0) {
+                    Object.entries(rubric.grados).forEach(([grado, proyectos]) => {
+                        this.addGrade({ grado, proyectos });
+                    });
+                } else {
+                    this.addGrade();
+                }
+
+                // Cargar criterios
+                rubric.criterios.forEach(c => {
+                    this.addCriteria(c);
+                });
+
+                document.getElementById('rubric-modal').classList.remove('hidden');
+            }
+
+            closeModal() {
+                document.getElementById('rubric-modal').classList.add('hidden');
+            }
+
+            addGrade(data = null) {
+                const grado = data ? data.grado : '';
+                const proyectos = data ? data.proyectos.join(', ') : '';
+
+                const html = `
+                    <div class="border border-slate-200 rounded-lg p-4 bg-purple-50" data-grade-id="${Date.now()}">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-purple-900 uppercase">Grado/Salón</span>
+                            <button onclick="admin.removeGrade(this)" class="text-rose-600 hover:text-rose-800 text-xs font-semibold">
+                                <i class="fa-solid fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre del Grado/Salón</label>
+                                <input type="text" class="grade-name w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none" value="${grado}" placeholder="Ej: 6A, Grupo 1, Sección A">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Proyectos (separados por coma)</label>
+                                <input type="text" class="grade-projects w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none" value="${proyectos}" placeholder="Ej: Proyecto A, Proyecto B, Proyecto C">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('grades-list').insertAdjacentHTML('beforeend', html);
+            }
+
+            removeGrade(button) {
+                const element = button.closest('[data-grade-id]');
+                if (element) {
+                    element.remove();
+                }
+            }
+
+            addCriteria(criteria = null) {
+                this.criteriaCounter++;
+                const id = criteria ? criteria.id : 'c' + this.criteriaCounter;
+                const name = criteria ? criteria.name : '';
+                const description = criteria ? criteria.description : '';
+                const weight = criteria ? criteria.weight : 10;
+
+                const html = `
+                    <div class="border border-slate-200 rounded-lg p-4 bg-slate-50" data-criteria-id="${id}">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-500 uppercase">Criterio #${this.criteriaCounter}</span>
+                            <button onclick="admin.removeCriteria('${id}')" class="text-rose-600 hover:text-rose-800 text-xs font-semibold">
+                                <i class="fa-solid fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre</label>
+                                <input type="text" class="criteria-name w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="${name}" placeholder="Nombre del criterio">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Peso (%)</label>
+                                <input type="number" class="criteria-weight w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="${weight}" min="1" max="100" placeholder="10">
+                            </div>
+                            <div class="md:col-span-6">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Descripción</label>
+                                <input type="text" class="criteria-description w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="${description}" placeholder="Qué se evalúa">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('criteria-list').insertAdjacentHTML('beforeend', html);
+            }
+
+            removeCriteria(id) {
+                const element = document.querySelector(`[data-criteria-id="${id}"]`);
+                if (element) {
+                    element.remove();
+                }
+            }
+
+            async saveRubric() {
+                const nombre = document.getElementById('rubric-name').value.trim();
+                const descripcion = document.getElementById('rubric-description').value.trim();
+
+                if (!nombre) {
+                    alert('Por favor ingrese el nombre de la rúbrica.');
+                    return;
+                }
+
+                // Recolectar grados y proyectos
+                const gradeElements = document.querySelectorAll('[data-grade-id]');
+                const grados = {};
+
+                gradeElements.forEach(el => {
+                    const gradoName = el.querySelector('.grade-name').value.trim();
+                    const proyectosText = el.querySelector('.grade-projects').value.trim();
+                    
+                    if (gradoName && proyectosText) {
+                        const proyectos = proyectosText.split(',').map(p => p.trim()).filter(p => p);
+                        if (proyectos.length > 0) {
+                            grados[gradoName] = proyectos;
+                        }
+                    }
+                });
+
+                // Recolectar criterios
+                const criteriaElements = document.querySelectorAll('[data-criteria-id]');
+                const criterios = [];
+
+                criteriaElements.forEach((el, index) => {
+                    const name = el.querySelector('.criteria-name').value.trim();
+                    const weight = parseInt(el.querySelector('.criteria-weight').value) || 0;
+                    const description = el.querySelector('.criteria-description').value.trim();
+
+                    if (name && weight > 0) {
+                        criterios.push({
+                            id: 'c' + (index + 1),
+                            name: name,
+                            description: description,
+                            weight: weight
+                        });
+                    }
+                });
+
+                if (criterios.length === 0) {
+                    alert('Por favor agregue al menos un criterio con nombre y peso.');
+                    return;
+                }
+
+                const totalWeight = criterios.reduce((sum, c) => sum + c.weight, 0);
+                if (totalWeight !== 100) {
+                    alert(`El peso total debe ser 100%. Actual: ${totalWeight}%`);
+                    return;
+                }
+
+                if (this.editingRubricId) {
+                    await rubricManager.updateRubric(this.editingRubricId, nombre, descripcion, grados, criterios);
+                    this.showToast('Rúbrica actualizada correctamente');
+                } else {
+                    await rubricManager.addRubric(nombre, descripcion, grados, criterios);
+                    this.showToast('Rúbrica creada correctamente');
+                }
+
+                this.closeModal();
+                this.renderRubricsList();
+            }
+
+            async deleteRubric(id) {
+                if (confirm('¿Está seguro de eliminar esta rúbrica? Esta acción no se puede deshacer.')) {
+                    await rubricManager.deleteRubric(id);
+                    this.renderRubricsList();
+                    this.showToast('Rúbrica eliminada');
+                }
+            }
+
+            // --- MODAL VER ---
+            viewRubric(id) {
+                const rubric = rubricManager.getRubric(id);
+                if (!rubric) return;
+
+                this.currentRubricId = id;
+                document.getElementById('view-modal-title').textContent = rubric.nombre;
+                
+                let html = `
+                    <div class="mb-4">
+                        <p class="text-sm text-slate-600">${rubric.descripcion}</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-700 border-collapse">
+                            <thead class="text-xs text-white uppercase bg-slate-800">
+                                <tr>
+                                    <th class="px-4 py-3 border-r border-slate-700 w-1/4">Criterio</th>
+                                    <th class="px-4 py-3 border-r border-slate-700 w-2/4">¿Qué se evalúa?</th>
+                                    <th class="px-4 py-3 text-center w-24">Peso</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                `;
+
+                rubric.criterios.forEach(c => {
+                    html += `
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-slate-800 border-r border-slate-200">${c.name}</td>
+                            <td class="px-4 py-3 text-xs text-slate-600 border-r border-slate-200">${c.description}</td>
+                            <td class="px-4 py-3 text-center font-bold text-slate-700">${c.weight}%</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                            <tfoot class="bg-blue-600 text-white font-bold">
+                                <tr>
+                                    <td colspan="2" class="px-4 py-3 uppercase tracking-wider text-sm border-r border-blue-500">Peso total</td>
+                                    <td class="px-4 py-3 text-center">${rubric.criterios.reduce((sum, c) => sum + c.weight, 0)}%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                `;
+
+                document.getElementById('view-rubric-content').innerHTML = html;
+                document.getElementById('use-rubric-link').href = `evaluacion.html?rubric=${id}`;
+                document.getElementById('view-modal').classList.remove('hidden');
+            }
+
+            closeViewModal() {
+                document.getElementById('view-modal').classList.add('hidden');
+            }
+
+            editFromView() {
+                this.closeViewModal();
+                this.editRubric(this.currentRubricId);
+            }
+
+            // --- UTILIDADES ---
+            showToast(message) {
+                const toast = document.getElementById('toast-notification');
+                document.getElementById('toast-message').textContent = message;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        }
+
+        const admin = new AdminApp();
+    </script>
+
+    <!-- Pie de página -->
+    <footer class="bg-white border-t border-slate-300 py-4 mt-auto text-center text-xs text-slate-500">
+        Sistema de Rúbricas - Fernando Oliveros Ocampo<br>
+        © <span id="current-year"></span> Todos los derechos reservados
+    </footer>
+</body>
+</html>

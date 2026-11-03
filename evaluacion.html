@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación - Rúbrica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=UTF-8&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md no-print py-3 px-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="text-white hover:text-slate-200">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 id="page-title" class="text-base md:text-xl font-bold tracking-wider uppercase">Evaluación</h1>
+                    <p id="rubric-name-display" class="text-xs text-blue-200"></p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+                <a href="admin.html" class="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                    <i class="fa-solid fa-cog"></i>
+                    <span class="hidden sm:inline">Admin</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Pestañas de navegación -->
+    <div class="bg-slate-200 border-b border-slate-300 no-print">
+        <div class="max-w-6xl mx-auto px-4">
+            <nav class="flex space-x-2 py-2">
+                <button id="tab-btn-evaluacion" onclick="evalApp.switchTab('evaluacion')" 
+                        class="px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-white text-blue-700 shadow-xs border-t-2 border-blue-600 flex items-center space-x-2 transition-all">
+                    <i class="fa-solid fa-table-cells"></i>
+                    <span>Evaluación</span>
+                </button>
+                <button id="tab-btn-comparativo" onclick="evalApp.switchTab('comparativo')" 
+                        class="px-4 py-2 text-xs md:text-sm font-bold rounded-t-lg bg-slate-300 text-slate-700 hover:bg-white/60 flex items-center space-x-2 transition-all">
+                    <i class="fa-solid fa-ranking-star"></i>
+                    <span>Comparativo</span>
+                    <span id="comparative-count-badge" class="ml-1 px-1.5 py-0.2 bg-blue-600 text-white text-xs rounded-full">0</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+
+        <!-- Tab: Evaluación -->
+        <section id="tab-evaluacion" class="tab-content space-y-6">
+            <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden">
+                
+                <!-- Encabezado -->
+                <div class="bg-blue-700 text-white py-2.5 px-4 text-center font-bold text-sm tracking-wider uppercase">
+                    Planilla de Evaluación
+                </div>
+
+                <!-- Metadatos -->
+                <div class="grid grid-cols-1 md:grid-cols-12 bg-blue-100/70 border-b border-blue-200 p-4 gap-4 items-center">
+                    <div class="md:col-span-4 flex items-center space-x-3">
+                        <label for="input-grado" class="font-bold text-xs text-blue-950 uppercase shrink-0">Grado / Salón:</label>
+                        <select id="input-grado" onchange="evalApp.onGradeChange()" 
+                                class="w-full bg-white border border-blue-400 font-semibold text-blue-900 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+                            <option value="6A">6A</option>
+                            <option value="6B">6B</option>
+                            <option value="7A">7A</option>
+                            <option value="7B">7B</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-8 flex items-center space-x-3">
+                        <label for="input-nombre" class="font-bold text-xs text-blue-950 uppercase shrink-0">Nombre del emprendimiento:</label>
+                        <div class="flex-1 flex items-center space-x-2">
+                            <select id="input-nombre" onchange="evalApp.onNombreChange()" 
+                                    class="w-full bg-white border border-blue-400 rounded px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
+                                <option value="">-- Seleccione --</option>
+                            </select>
+                            <input type="text" id="input-nombre-custom" oninput="evalApp.updateMetadata()" 
+                                   class="hidden w-full bg-white border border-blue-400 rounded px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs"
+                                   placeholder="Escriba el nombre...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Criterios -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-700 border-collapse">
+                        <thead class="text-xs text-white uppercase bg-slate-800">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 border-r border-slate-700 w-1/4">Criterio</th>
+                                <th scope="col" class="px-4 py-3 border-r border-slate-700 w-2/4">¿Qué se evalúa?</th>
+                                <th scope="col" class="px-4 py-3 border-r border-slate-700 text-center w-24">Peso</th>
+                                <th scope="col" class="px-4 py-3 text-center w-36">Calificación (1 a 5)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evaluation-tbody" class="divide-y divide-slate-200">
+                        </tbody>
+                        <tfoot class="bg-blue-600 text-white font-bold">
+                            <tr>
+                                <td colspan="2" class="px-4 py-3 uppercase tracking-wider text-sm border-r border-blue-500">
+                                    Calificación final ponderada
+                                </td>
+                                <td id="total-weight-cell" class="px-4 py-3 text-center border-r border-blue-500">100%</td>
+                                <td id="total-score-cell" class="px-4 py-3 text-center text-xl font-black bg-blue-800">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
+                    <label for="input-observaciones" class="block font-bold text-xs text-slate-700 uppercase">Observaciones del docente:</label>
+                    <textarea id="input-observaciones" rows="3" oninput="evalApp.updateMetadata()" placeholder="Escriba las observaciones y retroalimentación para este equipo..." 
+                              class="w-full bg-white border border-slate-300 rounded p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+
+                <!-- Botones -->
+                <div class="p-4 bg-slate-100 border-t border-slate-200 flex flex-wrap justify-between items-center gap-3">
+                    <span id="editing-indicator" class="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded border border-amber-300 hidden">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> Modificando evaluación existente
+                    </span>
+                    <div class="flex items-center space-x-3 ml-auto">
+                        <button onclick="evalApp.clearForm()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs uppercase rounded shadow transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-eraser"></i>
+                            <span>Limpiar</span>
+                        </button>
+                        <button onclick="evalApp.saveCurrentGrade()" class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs uppercase rounded shadow-md transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Guardar Nota</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab: Comparativo -->
+        <section id="tab-comparativo" class="tab-content space-y-6 hidden">
+            <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden">
+                <div class="bg-blue-700 text-white py-3 px-4 text-center font-bold text-base tracking-wider uppercase">
+                    Comparativo de Calificaciones
+                </div>
+
+                <!-- Barra de herramientas -->
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-3 w-full md:w-auto">
+                        <label for="filter-grado" class="font-bold text-xs text-slate-700 uppercase shrink-0">Filtrar Salón:</label>
+                        <select id="filter-grado" onchange="evalApp.renderComparativeTab()" class="bg-white border border-slate-300 font-bold text-blue-900 rounded px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="TODOS">Todos los salones</option>
+                            <option value="6A">Salón 6A</option>
+                            <option value="6B">Salón 6B</option>
+                            <option value="7A">Salón 7A</option>
+                            <option value="7B">Salón 7B</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                        <button onclick="evalApp.exportCSV()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>Exportar CSV</span>
+                        </button>
+                        <button onclick="evalApp.clearAllComparisons()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Limpiar Todo</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenedor de tablas -->
+                <div id="comparative-tables-container" class="p-4 space-y-8">
+                </div>
+            </div>
+
+            <!-- Gráfico -->
+            <div class="bg-white rounded-lg shadow-md border border-slate-300 p-5">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-column text-blue-600"></i>
+                        <span>Promedio y Calificaciones por Salón</span>
+                    </h3>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="comparativeChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3 border border-slate-700">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">Operación realizada con éxito.</span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        class EvaluationApp {
+            constructor() {
+                this.rubricId = null;
+                this.rubric = null;
+                this.activeTab = 'evaluacion';
+                this.comparativeList = [];
+                this.editingId = null;
+                this.chartInstance = null;
+                this.formState = {
+                    grado: '',
+                    nombre: '',
+                    observaciones: '',
+                    ratings: {}
+                };
+                this.init();
+            }
+
+            async init() {
+                const yearElement = document.getElementById('current-year');
+                if (yearElement) {
+                    yearElement.textContent = new Date().getFullYear();
+                }
+                await rubricManager.init();
+                if (!rubricManager.getCurrentUser()) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const urlParams = new URLSearchParams(window.location.search);
+                this.rubricId = urlParams.get('rubric');
+
+                if (!this.rubricId) {
+                    alert('No se especificó una rúbrica. Redirigiendo al inicio...');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                this.rubric = rubricManager.getRubric(this.rubricId);
+                if (!this.rubric) {
+                    alert('Rúbrica no encontrada. Redirigiendo al administrador...');
+                    window.location.href = 'admin.html';
+                    return;
+                }
+
+                document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
+                document.getElementById('page-title').textContent = 'Evaluación - ' + this.rubric.nombre;
+
+                // Cargar grados dinámicamente
+                this.loadGradesDropdown();
+
+                await this.loadData();
+                this.renderEvaluationTable();
+                this.renderFormState();
+                this.renderComparativeTab();
+                this.initChart();
+            }
+
+            loadGradesDropdown() {
+                const gradoSelect = document.getElementById('input-grado');
+                const filterGradoSelect = document.getElementById('filter-grado');
+                
+                const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+                
+                let html = '<option value="">-- Seleccione --</option>';
+                grados.forEach(grado => {
+                    html += `<option value="${grado}">${grado}</option>`;
+                });
+                
+                gradoSelect.innerHTML = html;
+                
+                // Actualizar filtro del comparativo
+                let filterHtml = '<option value="TODOS">Todos</option>';
+                grados.forEach(grado => {
+                    filterHtml += `<option value="${grado}">${grado}</option>`;
+                });
+                filterGradoSelect.innerHTML = filterHtml;
+            }
+
+            async loadData() {
+                this.comparativeList = await rubricManager.loadGrades(this.rubricId);
+                
+                const savedForm = rubricManager.loadFormState(this.rubricId);
+                if (savedForm) {
+                    this.formState = savedForm;
+                    const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+                    if (!grados.includes(this.formState.grado)) {
+                        this.formState.grado = grados.length > 0 ? grados[0] : '';
+                    }
+                } else {
+                    // Inicializar con el primer grado disponible
+                    const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+                    this.formState.grado = grados.length > 0 ? grados[0] : '';
+                }
+
+                // Inicializar ratings vacíos para todos los criterios
+                this.rubric.criterios.forEach(c => {
+                    if (this.formState.ratings[c.id] === undefined) {
+                        this.formState.ratings[c.id] = '';
+                    }
+                });
+            }
+
+            updateEntrepreneurshipDropdown(selectedName = '') {
+                const gradoSelect = document.getElementById('input-grado');
+                const nombreSelect = document.getElementById('input-nombre');
+                const currentGrade = gradoSelect.value;
+                const projects = (this.rubric.grados && this.rubric.grados[currentGrade]) ? this.rubric.grados[currentGrade] : [];
+
+                let html = '<option value="">-- Seleccione --</option>';
+                html += '<option value="OTRO">-- Otro (escribir nombre) --</option>';
+                projects.forEach(proj => {
+                    const selected = proj === selectedName ? 'selected' : '';
+                    html += `<option value="${proj}" ${selected}>${proj}</option>`;
+                });
+                nombreSelect.innerHTML = html;
+            }
+
+            onGradeChange() {
+                this.updateMetadata();
+                this.updateEntrepreneurshipDropdown();
+                // Resetear el campo custom al cambiar de grado
+                document.getElementById('input-nombre-custom').classList.add('hidden');
+                document.getElementById('input-nombre-custom').value = '';
+            }
+
+            onNombreChange() {
+                const nombreSelect = document.getElementById('input-nombre');
+                const customInput = document.getElementById('input-nombre-custom');
+                
+                if (nombreSelect.value === 'OTRO') {
+                    customInput.classList.remove('hidden');
+                    customInput.focus();
+                } else {
+                    customInput.classList.add('hidden');
+                    customInput.value = '';
+                }
+                this.updateMetadata();
+            }
+
+            calculateFinalScore() {
+                return rubricManager.calculateFinalScore(this.formState.ratings, this.rubric.criterios);
+            }
+
+            renderEvaluationTable() {
+                const tbody = document.getElementById('evaluation-tbody');
+                let html = '';
+
+                this.rubric.criterios.forEach(c => {
+                    const rating = (this.formState.ratings[c.id] !== undefined && this.formState.ratings[c.id] !== '') ? this.formState.ratings[c.id] : '';
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-4 py-3 font-bold text-slate-800 border-r border-slate-200">
+                                ${c.name}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-slate-600 border-r border-slate-200 leading-relaxed">
+                                ${c.description}
+                            </td>
+                            <td class="px-4 py-3 text-center font-bold text-slate-700 border-r border-slate-200">
+                                ${c.weight}%
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <input type="number" min="1.0" max="5.0" step="0.1" 
+                                       value="${rating}" 
+                                       placeholder="—"
+                                       onchange="evalApp.updateRating('${c.id}', this.value)"
+                                       oninput="evalApp.updateRating('${c.id}', this.value)"
+                                       class="w-24 text-center font-extrabold bg-white border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded p-1.5 text-base shadow-2xs">
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+                this.updateScoreDisplay();
+            }
+
+            renderFormState() {
+                const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+                document.getElementById('input-grado').value = this.formState.grado || (grados.length > 0 ? grados[0] : '');
+                this.updateEntrepreneurshipDropdown(this.formState.nombre);
+                document.getElementById('input-observaciones').value = this.formState.observaciones || '';
+
+                // Verificar si el nombre es personalizado (no está en la lista)
+                const nombreSelect = document.getElementById('input-nombre');
+                const customInput = document.getElementById('input-nombre-custom');
+                const currentGrade = this.formState.grado;
+                const projects = (this.rubric.grados && this.rubric.grados[currentGrade]) ? this.rubric.grados[currentGrade] : [];
+                
+                if (this.formState.nombre && !projects.includes(this.formState.nombre)) {
+                    nombreSelect.value = 'OTRO';
+                    customInput.classList.remove('hidden');
+                    customInput.value = this.formState.nombre;
+                } else {
+                    nombreSelect.value = this.formState.nombre || '';
+                    customInput.classList.add('hidden');
+                    customInput.value = '';
+                }
+            }
+
+            updateScoreDisplay() {
+                const result = this.calculateFinalScore();
+                document.getElementById('total-score-cell').textContent = result.score.toFixed(2);
+                document.getElementById('total-weight-cell').textContent = result.weight + '%';
+            }
+
+            updateRating(criteriaId, val) {
+                if (val === '' || val === null) {
+                    this.formState.ratings[criteriaId] = '';
+                } else {
+                    let num = parseFloat(val);
+                    if (isNaN(num)) num = '';
+                    else if (num < 1.0) num = 1.0;
+                    else if (num > 5.0) num = 5.0;
+                    this.formState.ratings[criteriaId] = num;
+                }
+                rubricManager.saveFormState(this.rubricId, this.formState);
+                this.updateScoreDisplay();
+            }
+
+            updateMetadata() {
+                this.formState.grado = document.getElementById('input-grado').value;
+                const nombreSelect = document.getElementById('input-nombre');
+                const customInput = document.getElementById('input-nombre-custom');
+                
+                if (nombreSelect.value === 'OTRO') {
+                    this.formState.nombre = customInput.value.trim();
+                } else {
+                    this.formState.nombre = nombreSelect.value;
+                }
+                
+                this.formState.observaciones = document.getElementById('input-observaciones').value;
+                rubricManager.saveFormState(this.rubricId, this.formState);
+            }
+
+            async saveCurrentGrade() {
+                this.updateMetadata();
+
+                if (!this.formState.nombre.trim()) {
+                    alert('Por favor seleccione el nombre del emprendimiento.');
+                    return;
+                }
+
+                const finalCalc = this.calculateFinalScore();
+                const recordId = this.editingId || ('proj_' + Date.now());
+
+                const gradeRecord = {
+                    id: recordId,
+                    grado: this.formState.grado,
+                    nombre: this.formState.nombre.trim(),
+                    notaFinal: parseFloat(finalCalc.score.toFixed(2)),
+                    ratings: { ...this.formState.ratings },
+                    observaciones: this.formState.observaciones.trim() || 'Sin observaciones.',
+                    fecha: new Date().toISOString()
+                };
+
+                await rubricManager.addGrade(this.rubricId, gradeRecord);
+                this.comparativeList = await rubricManager.loadGrades(this.rubricId);
+                
+                this.showToast('Nota guardada correctamente');
+                this.clearForm(false);
+                this.renderComparativeTab();
+                this.updateChart();
+                this.switchTab('comparativo');
+            }
+
+            clearForm(confirmUser = true) {
+                if (confirmUser && !confirm('¿Desea limpiar los campos del formulario?')) {
+                    return;
+                }
+                
+                this.editingId = null;
+                document.getElementById('editing-indicator').classList.add('hidden');
+
+                const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+                this.formState = {
+                    grado: this.formState.grado || (grados.length > 0 ? grados[0] : ''),
+                    nombre: '',
+                    observaciones: '',
+                    ratings: {}
+                };
+
+                this.rubric.criterios.forEach(c => {
+                    this.formState.ratings[c.id] = '';
+                });
+
+                rubricManager.saveFormState(this.rubricId, this.formState);
+                this.renderEvaluationTable();
+                this.renderFormState();
+            }
+
+            switchTab(tab) {
+                this.activeTab = tab;
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById('tab-' + tab).classList.remove('hidden');
+                
+                document.querySelectorAll('[id^="tab-btn-"]').forEach(btn => {
+                    btn.classList.remove('bg-white', 'text-blue-700', 'shadow-xs', 'border-t-2', 'border-blue-600');
+                    btn.classList.add('bg-slate-300', 'text-slate-700', 'hover:bg-white/60');
+                });
+                
+                const activeBtn = document.getElementById('tab-btn-' + tab);
+                activeBtn.classList.remove('bg-slate-300', 'text-slate-700', 'hover:bg-white/60');
+                activeBtn.classList.add('bg-white', 'text-blue-700', 'shadow-xs', 'border-t-2', 'border-blue-600');
+            }
+
+            renderComparativeTab() {
+                const container = document.getElementById('comparative-tables-container');
+                const filterGrade = document.getElementById('filter-grado').value;
+                const badge = document.getElementById('comparative-count-badge');
+                
+                badge.textContent = this.comparativeList.length;
+
+                if (this.comparativeList.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-400">
+                            <i class="fa-solid fa-folder-open text-4xl mb-3"></i>
+                            <p class="text-sm">No hay registros guardados.</p>
+                        </div>`;
+                    return;
+                }
+
+                const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+                const targetGrades = filterGrade === 'TODOS' ? grados : [filterGrade];
+                let html = '';
+
+                targetGrades.forEach(grado => {
+                    const roomProjects = this.comparativeList
+                        .filter(item => item.grado === grado)
+                        .sort((a, b) => b.notaFinal - a.notaFinal);
+
+                    if (filterGrade !== 'TODOS' && roomProjects.length === 0) {
+                        html += `
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center text-slate-500">
+                                No hay registros en <strong>${grado}</strong>.
+                            </div>`;
+                        return;
+                    }
+
+                    if (roomProjects.length === 0) return;
+
+                    html += `
+                        <div class="border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                            <div class="bg-slate-800 text-white px-4 py-2.5 flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="bg-blue-600 text-white font-black text-xs px-2.5 py-1 rounded">${grado}</span>
+                                    <span class="text-xs text-slate-300 font-medium">(${roomProjects.length} ${roomProjects.length === 1 ? 'registro' : 'registros'})</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-slate-700 border-collapse">
+                                    <thead class="text-xs text-slate-700 uppercase bg-slate-100 border-b border-slate-200">
+                                        <tr>
+                                            <th class="px-4 py-2.5 border-r border-slate-200 w-24 text-center">Puesto</th>
+                                            <th class="px-4 py-2.5 border-r border-slate-200">Nombre</th>
+                                            <th class="px-4 py-2.5 border-r border-slate-200 w-28 text-center">Nota Final</th>
+                                            <th class="px-4 py-2.5 border-r border-slate-200">Observaciones</th>
+                                            <th class="px-4 py-2.5 text-center w-28">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                    `;
+
+                    roomProjects.forEach((item, index) => {
+                        const puesto = index + 1;
+                        let puestoBadge = `<span class="px-2.5 py-1 bg-slate-100 font-bold text-slate-700 rounded text-xs border border-slate-300">#${puesto}</span>`;
+                        if (puesto === 1) puestoBadge = `<span class="px-2.5 py-1 bg-amber-100 text-amber-900 font-black rounded text-xs border border-amber-400"><i class="fa-solid fa-trophy mr-1 text-amber-500"></i> #1</span>`;
+                        else if (puesto === 2) puestoBadge = `<span class="px-2.5 py-1 bg-slate-200 text-slate-800 font-bold rounded text-xs border border-slate-400"><i class="fa-solid fa-medal mr-1 text-slate-500"></i> #2</span>`;
+                        else if (puesto === 3) puestoBadge = `<span class="px-2.5 py-1 bg-orange-100 text-orange-900 font-bold rounded text-xs border border-orange-300"><i class="fa-solid fa-award mr-1 text-orange-600"></i> #3</span>`;
+
+                        let noteClass = 'text-blue-700 font-extrabold';
+                        if (item.notaFinal >= 4.5) noteClass = 'text-emerald-700 font-extrabold';
+                        else if (item.notaFinal < 3.0) noteClass = 'text-rose-600 font-extrabold';
+
+                        html += `
+                            <tr class="hover:bg-blue-50/40 transition-colors">
+                                <td class="px-4 py-3 text-center border-r border-slate-200">${puestoBadge}</td>
+                                <td class="px-4 py-3 font-bold text-slate-900 border-r border-slate-200">${item.nombre}</td>
+                                <td class="px-4 py-3 text-center text-base border-r border-slate-200 ${noteClass}">${item.notaFinal.toFixed(2)}</td>
+                                <td class="px-4 py-3 text-xs text-slate-600 border-r border-slate-200">${item.observaciones}</td>
+                                <td class="px-4 py-3 text-center space-x-1">
+                                    <button onclick="evalApp.editGrade('${item.id}')" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold rounded transition-all" title="Editar">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button onclick="evalApp.deleteGrade('${item.id}')" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold rounded transition-all" title="Eliminar">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            }
+
+            editGrade(id) {
+                const grade = this.comparativeList.find(item => item.id === id);
+                if (!grade) return;
+
+                this.editingId = id;
+                this.formState = {
+                    grado: grade.grado,
+                    nombre: grade.nombre,
+                    observaciones: grade.observaciones,
+                    ratings: { ...grade.ratings }
+                };
+
+                document.getElementById('editing-indicator').classList.remove('hidden');
+                this.renderFormState();
+                this.renderEvaluationTable();
+                this.switchTab('evaluacion');
+            }
+
+            async deleteGrade(id) {
+                if (confirm('¿Está seguro de eliminar este registro?')) {
+                    await rubricManager.deleteGrade(this.rubricId, id);
+                    this.comparativeList = await rubricManager.loadGrades(this.rubricId);
+                    this.renderComparativeTab();
+                    this.updateChart();
+                    this.showToast('Registro eliminado');
+                }
+            }
+
+            async clearAllComparisons() {
+                if (confirm('¿Está seguro de eliminar TODOS los registros? Esta acción no se puede deshacer.')) {
+                    await rubricManager.clearAllGrades(this.rubricId);
+                    this.comparativeList = [];
+                    this.renderComparativeTab();
+                    this.updateChart();
+                    this.showToast('Todos los registros eliminados');
+                }
+            }
+
+            exportCSV() {
+                if (this.comparativeList.length === 0) {
+                    alert('No hay datos para exportar.');
+                    return;
+                }
+
+                let csv = 'Grado,Nombre,Nota Final,Observaciones,Fecha\n';
+                this.comparativeList.forEach(item => {
+                    csv += `"${item.grado}","${item.nombre}",${item.notaFinal},"${item.observaciones}","${item.fecha}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `evaluaciones_${this.rubric.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+            }
+
+            initChart() {
+                const ctx = document.getElementById('comparativeChart');
+                if (!ctx) return;
+
+                this.chartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Promedio',
+                            data: [],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 5
+                            }
+                        }
+                    }
+                });
+
+                this.updateChart();
+            }
+
+            updateChart() {
+                if (!this.chartInstance) return;
+
+                const labels = [];
+                const data = [];
+
+                const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+                
+                grados.forEach(grado => {
+                    const grades = this.comparativeList.filter(item => item.grado === grado);
+                    if (grades.length > 0) {
+                        const avg = grades.reduce((sum, item) => sum + item.notaFinal, 0) / grades.length;
+                        labels.push(grado);
+                        data.push(avg.toFixed(2));
+                    }
+                });
+
+                this.chartInstance.data.labels = labels;
+                this.chartInstance.data.datasets[0].data = data;
+                this.chartInstance.update();
+            }
+
+            showToast(message) {
+                const toast = document.getElementById('toast-notification');
+                document.getElementById('toast-message').textContent = message;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        }
+
+        const evalApp = new EvaluationApp();
+    </script>
+
+    <!-- Pie de página -->
+    <footer class="bg-white border-t border-slate-300 py-4 mt-auto text-center text-xs text-slate-500">
+        Sistema de Rúbricas - Fernando Oliveros Ocampo<br>
+        © <span id="current-year"></span> Todos los derechos reservados
+    </footer>
+</body>
+</html>
