@@ -34,17 +34,32 @@ class RubricManager {
         return data;
     }
 
+
     async signUp(email, password, nombre) {
+        const basePath = window.location.pathname.startsWith('/rubrica/')
+            ? '/rubrica'
+            : '';
+
         const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: window.location.origin + '/login.html'
+                emailRedirectTo: window.location.origin + basePath + '/login.html',
+                data: {
+                    nombre: nombre
+                }
             }
         });
+
         if (error) throw error;
+
         this.currentUser = data.user;
-        await this.loadRubrics();
+
+        // Solo cargar las rúbricas si existe una sesión activa
+        if (data.session) {
+            await this.loadRubrics();
+        }
+
         return data;
     }
 
