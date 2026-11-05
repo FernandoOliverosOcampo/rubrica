@@ -36,10 +36,16 @@
                 <h1 class="text-2xl md:text-3xl font-bold tracking-wider uppercase mb-2">Sistema de Rúbricas</h1>
                 <p class="text-blue-200 text-sm">Gestión y evaluación con rúbricas personalizables</p>
             </div>
-            <button onclick="mainApp.logout()" class="text-white hover:text-blue-200 transition-colors text-sm font-semibold flex items-center space-x-2">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Cerrar Sesión</span>
-            </button>
+            <div class="flex items-center space-x-4">
+                <a href="perfil.html" class="text-white hover:text-blue-200 transition-colors text-sm font-semibold flex items-center space-x-2">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Mi Perfil</span>
+                </a>
+                <button onclick="mainApp.logout()" class="text-white hover:text-blue-200 transition-colors text-sm font-semibold flex items-center space-x-2">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -127,6 +133,31 @@
         © <span id="current-year"></span> Todos los derechos reservados
     </footer>
 
+    <!-- Modal de Confirmación de Cierre de Sesión -->
+    <div id="logout-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 p-8 w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-right-from-bracket text-3xl text-rose-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 mb-2">¿Cerrar Sesión?</h2>
+                <p class="text-sm text-slate-600">¿Estás seguro de que deseas cerrar tu sesión actual?</p>
+            </div>
+
+            <div class="flex space-x-3">
+                <button onclick="mainApp.hideLogoutModal()"
+                        class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-lg transition-all">
+                    Cancelar
+                </button>
+                <button onclick="mainApp.confirmLogout()"
+                        class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2">
+                    <span>Cerrar Sesión</span>
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
     <script>
         class MainApp {
@@ -140,17 +171,28 @@
                     yearElement.textContent = new Date().getFullYear();
                 }
                 await rubricManager.init();
-                if (!rubricManager.getCurrentUser()) {
+                const user = await rubricManager.getCurrentUser();
+                if (!user) {
                     window.location.href = 'login.html';
                     return;
                 }
             }
 
             async logout() {
-                if (confirm('¿Está seguro de cerrar sesión?')) {
-                    await rubricManager.signOut();
-                    window.location.href = 'login.html';
-                }
+                this.showLogoutModal();
+            }
+
+            showLogoutModal() {
+                document.getElementById('logout-modal').classList.remove('hidden');
+            }
+
+            hideLogoutModal() {
+                document.getElementById('logout-modal').classList.add('hidden');
+            }
+
+            async confirmLogout() {
+                await rubricManager.signOut();
+                window.location.href = 'login.html';
             }
         }
 

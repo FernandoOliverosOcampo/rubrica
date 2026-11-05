@@ -18,6 +18,11 @@ class RubricManager {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
             this.currentUser = session.user;
+            // Obtener datos completos del usuario incluyendo metadatos
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                this.currentUser = user;
+            }
             await this.loadRubrics();
         }
     }
@@ -30,6 +35,11 @@ class RubricManager {
         });
         if (error) throw error;
         this.currentUser = data.user;
+        // Obtener datos completos del usuario incluyendo metadatos
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+            this.currentUser = user;
+        }
         await this.loadRubrics();
         return data;
     }
@@ -69,7 +79,34 @@ class RubricManager {
         this.rubrics = [];
     }
 
-    getCurrentUser() {
+    async resetPassword(email) {
+        const basePath = window.location.pathname.startsWith('/rubrica/')
+            ? '/rubrica'
+            : '';
+
+        const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + basePath + '/cambiar-contrasena.html'
+        });
+
+        if (error) throw error;
+        return data;
+    }
+
+    async updatePassword(newPassword) {
+        const { data, error } = await supabaseClient.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) throw error;
+        return data;
+    }
+
+    async getCurrentUser() {
+        // Obtener siempre los datos más actualizados del usuario
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+            this.currentUser = user;
+        }
         return this.currentUser;
     }
 

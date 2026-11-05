@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Sistema de Rúbricas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md py-6 px-4">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wider uppercase mb-2">Sistema de Rúbricas</h1>
+                <p class="text-blue-200 text-sm">Gestión y evaluación con rúbricas personalizables</p>
+            </div>
+            <button onclick="perfilApp.logout()" class="text-white hover:text-blue-200 transition-colors text-sm font-semibold flex items-center space-x-2">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Cerrar Sesión</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-12">
+        <div class="mb-6">
+            <a href="index.html" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold text-sm transition-colors">
+                <i class="fa-solid fa-arrow-left mr-2"></i>
+                Volver al inicio
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Información del Usuario -->
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+                <div class="flex items-center space-x-4 mb-6">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-user text-3xl text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Mi Perfil</h2>
+                        <p class="text-sm text-slate-600">Información de tu cuenta</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre</label>
+                        <div id="user-nombre" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-800">
+                            Cargando...
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Correo electrónico</label>
+                        <div id="user-email" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-800">
+                            Cargando...
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha de registro</label>
+                        <div id="user-created" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-800">
+                            Cargando...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cambiar Contraseña -->
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+                <div class="flex items-center space-x-4 mb-6">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-key text-3xl text-emerald-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Cambiar Contraseña</h2>
+                        <p class="text-sm text-slate-600">Actualiza tu contraseña de acceso</p>
+                    </div>
+                </div>
+
+                <button onclick="perfilApp.showPasswordModal()"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-key"></i>
+                    <span>Cambiar Contraseña</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-white border-t border-slate-300 py-4 mt-auto text-center text-xs text-slate-500">
+        Sistema de Rúbricas - Fernando Oliveros Ocampo<br>
+        © <span id="current-year"></span> Todos los derechos reservados
+    </footer>
+
+    <!-- Modal de Cambiar Contraseña -->
+    <div id="password-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 p-8 w-full max-w-md">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-key text-2xl text-emerald-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Cambiar Contraseña</h2>
+                        <p class="text-sm text-slate-600">Actualiza tu contraseña de acceso</p>
+                    </div>
+                </div>
+                <button onclick="perfilApp.hidePasswordModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form onsubmit="perfilApp.handleChangePassword(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label for="new-password" class="block text-sm font-semibold text-slate-700 mb-1">Nueva contraseña</label>
+                        <input type="password" id="new-password" required minlength="6"
+                               class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none focus:border-emerald-500"
+                               placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-semibold text-slate-700 mb-1">Confirmar nueva contraseña</label>
+                        <input type="password" id="confirm-password" required minlength="6"
+                               class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none focus:border-emerald-500"
+                               placeholder="Repite tu nueva contraseña">
+                    </div>
+                    <div id="password-error" class="hidden text-rose-600 text-sm font-semibold"></div>
+                    <div id="password-success" class="hidden text-emerald-600 text-sm font-semibold"></div>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="perfilApp.hidePasswordModal()"
+                                class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-lg transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="password-btn"
+                                class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2">
+                            <span>Cambiar</span>
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación de Cierre de Sesión -->
+    <div id="logout-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 p-8 w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-right-from-bracket text-3xl text-rose-600"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 mb-2">¿Cerrar Sesión?</h2>
+                <p class="text-sm text-slate-600">¿Estás seguro de que deseas cerrar tu sesión actual?</p>
+            </div>
+
+            <div class="flex space-x-3">
+                <button onclick="perfilApp.hideLogoutModal()"
+                        class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-lg transition-all">
+                    Cancelar
+                </button>
+                <button onclick="perfilApp.confirmLogout()"
+                        class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2">
+                    <span>Cerrar Sesión</span>
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        class PerfilApp {
+            constructor() {
+                this.init();
+            }
+
+            async init() {
+                const yearElement = document.getElementById('current-year');
+                if (yearElement) {
+                    yearElement.textContent = new Date().getFullYear();
+                }
+
+                await rubricManager.init();
+                const user = await rubricManager.getCurrentUser();
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                await this.loadUserInfo();
+            }
+
+            async loadUserInfo() {
+                const user = await rubricManager.getCurrentUser();
+                const nombreElement = document.getElementById('user-nombre');
+                const emailElement = document.getElementById('user-email');
+                const createdElement = document.getElementById('user-created');
+
+                if (user) {
+                    nombreElement.textContent = user.user_metadata?.nombre || 'No especificado';
+                    emailElement.textContent = user.email || 'No disponible';
+                    const createdAt = new Date(user.created_at);
+                    createdElement.textContent = createdAt.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+            }
+
+            showPasswordModal() {
+                document.getElementById('password-modal').classList.remove('hidden');
+            }
+
+            hidePasswordModal() {
+                document.getElementById('password-modal').classList.add('hidden');
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-password').value = '';
+                document.getElementById('password-error').classList.add('hidden');
+                document.getElementById('password-success').classList.add('hidden');
+            }
+
+            showLogoutModal() {
+                document.getElementById('logout-modal').classList.remove('hidden');
+            }
+
+            hideLogoutModal() {
+                document.getElementById('logout-modal').classList.add('hidden');
+            }
+
+            async handleChangePassword(event) {
+                event.preventDefault();
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                const errorDiv = document.getElementById('password-error');
+                const successDiv = document.getElementById('password-success');
+                const btn = document.getElementById('password-btn');
+
+                errorDiv.classList.add('hidden');
+                successDiv.classList.add('hidden');
+
+                if (newPassword !== confirmPassword) {
+                    errorDiv.textContent = 'Las contraseñas no coinciden';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cambiando...';
+
+                try {
+                    // Cambiar la contraseña directamente
+                    await rubricManager.updatePassword(newPassword);
+                    successDiv.textContent = '¡Contraseña cambiada exitosamente!';
+                    successDiv.classList.remove('hidden');
+
+                    // Limpiar el formulario y cerrar el modal después de un momento
+                    setTimeout(() => {
+                        this.hidePasswordModal();
+                    }, 1500);
+
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Cambiar</span><i class="fa-solid fa-check"></i>';
+                } catch (error) {
+                    errorDiv.textContent = error.message || 'Error al cambiar contraseña';
+                    errorDiv.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Cambiar</span><i class="fa-solid fa-check"></i>';
+                }
+            }
+
+            async logout() {
+                this.showLogoutModal();
+            }
+
+            async confirmLogout() {
+                await rubricManager.signOut();
+                window.location.href = 'login.html';
+            }
+        }
+
+        let perfilApp;
+        window.addEventListener('DOMContentLoaded', () => {
+            perfilApp = new PerfilApp();
+        });
+    </script>
+</body>
+</html>

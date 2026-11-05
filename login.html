@@ -33,7 +33,7 @@
     <header class="bg-blue-600 text-white shadow-md py-6 px-4">
         <div class="max-w-6xl mx-auto text-center">
             <h1 class="text-2xl md:text-3xl font-bold tracking-wider uppercase">Sistema de Rúbricas</h1>
-            <p class="text-blue-200 text-sm">I.E. Santa Teresita</p>
+            <p class="text-blue-200 text-sm">Gestión y evaluación con rúbricas personalizables</p>
         </div>
     </header>
 
@@ -71,6 +71,11 @@
                             <input type="password" id="login-password" required
                                    class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500"
                                    placeholder="••••••••">
+                        </div>
+                        <div class="text-right">
+                            <a href="#" onclick="authApp.showResetPassword(event)" class="text-sm text-blue-600 hover:text-blue-800 font-semibold">
+                                ¿Olvidaste tu contraseña?
+                            </a>
                         </div>
                         <div id="login-error" class="hidden text-rose-600 text-sm font-semibold"></div>
                         <button type="submit" id="login-btn"
@@ -122,6 +127,40 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal de Restablecimiento de Contraseña -->
+    <div id="reset-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 p-8 w-full max-w-md">
+            <div class="text-center mb-6">
+                <i class="fa-solid fa-key text-5xl text-blue-600 mb-3"></i>
+                <h2 class="text-xl font-bold text-slate-900">Restablecer Contraseña</h2>
+                <p class="text-sm text-slate-600">Ingresa tu correo para recibir un enlace de restablecimiento</p>
+            </div>
+
+            <form onsubmit="authApp.handleResetPassword(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label for="reset-email" class="block text-sm font-semibold text-slate-700 mb-1">Correo electrónico</label>
+                        <input type="email" id="reset-email" required
+                               class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500"
+                               placeholder="tu@email.com">
+                    </div>
+                    <div id="reset-error" class="hidden text-rose-600 text-sm font-semibold"></div>
+                    <div id="reset-success" class="hidden text-emerald-600 text-sm font-semibold"></div>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="authApp.hideResetPassword()"
+                                class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-lg transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="reset-btn"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-all">
+                            Enviar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Pie de página -->
     <footer class="bg-white border-t border-slate-300 py-4 mt-auto text-center text-xs text-slate-500">
@@ -213,7 +252,7 @@
                     await rubricManager.signUp(email, password, nombre);
                     successDiv.textContent = '¡Cuenta creada exitosamente! Redirigiendo...';
                     successDiv.classList.remove('hidden');
-                    
+
                     setTimeout(() => {
                         window.location.href = 'index.html';
                     }, 2000);
@@ -222,6 +261,44 @@
                     errorDiv.classList.remove('hidden');
                     btn.disabled = false;
                     btn.innerHTML = '<span>Crear Cuenta</span><i class="fa-solid fa-check"></i>';
+                }
+            }
+
+            showResetPassword(event) {
+                event.preventDefault();
+                document.getElementById('reset-modal').classList.remove('hidden');
+            }
+
+            hideResetPassword() {
+                document.getElementById('reset-modal').classList.add('hidden');
+                document.getElementById('reset-email').value = '';
+                document.getElementById('reset-error').classList.add('hidden');
+                document.getElementById('reset-success').classList.add('hidden');
+            }
+
+            async handleResetPassword(event) {
+                event.preventDefault();
+                const email = document.getElementById('reset-email').value;
+                const errorDiv = document.getElementById('reset-error');
+                const successDiv = document.getElementById('reset-success');
+                const btn = document.getElementById('reset-btn');
+
+                errorDiv.classList.add('hidden');
+                successDiv.classList.add('hidden');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+
+                try {
+                    await rubricManager.resetPassword(email);
+                    successDiv.textContent = 'Se ha enviado un correo con instrucciones para restablecer tu contraseña.';
+                    successDiv.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Enviar';
+                } catch (error) {
+                    errorDiv.textContent = error.message || 'Error al enviar correo de restablecimiento';
+                    errorDiv.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Enviar';
                 }
             }
         }

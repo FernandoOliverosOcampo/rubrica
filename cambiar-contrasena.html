@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambiar Contraseña - Sistema de Rúbricas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md py-6 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-wider uppercase">Sistema de Rúbricas</h1>
+            <p class="text-blue-200 text-sm">I.E. Santa Teresita</p>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 flex items-center justify-center px-4 py-12">
+        <div class="w-full max-w-md">
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+                <div class="text-center mb-6">
+                    <i class="fa-solid fa-lock text-5xl text-blue-600 mb-3"></i>
+                    <h2 class="text-xl font-bold text-slate-900">Cambiar Contraseña</h2>
+                    <p class="text-sm text-slate-600">Ingresa tu nueva contraseña</p>
+                </div>
+
+                <form onsubmit="changePasswordApp.handleSubmit(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="new-password" class="block text-sm font-semibold text-slate-700 mb-1">Nueva Contraseña</label>
+                            <input type="password" id="new-password" required minlength="6"
+                                   class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500"
+                                   placeholder="Mínimo 6 caracteres">
+                        </div>
+                        <div>
+                            <label for="confirm-password" class="block text-sm font-semibold text-slate-700 mb-1">Confirmar Contraseña</label>
+                            <input type="password" id="confirm-password" required minlength="6"
+                                   class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500"
+                                   placeholder="Repite tu contraseña">
+                        </div>
+                        <div id="error" class="hidden text-rose-600 text-sm font-semibold"></div>
+                        <div id="success" class="hidden text-emerald-600 text-sm font-semibold"></div>
+                        <button type="submit" id="submit-btn"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2">
+                            <span>Cambiar Contraseña</span>
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-white border-t border-slate-300 py-4 mt-auto text-center text-xs text-slate-500">
+        Sistema de Rúbricas - Fernando Oliveros Ocampo<br>
+        © <span id="current-year"></span> Todos los derechos reservados
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        class ChangePasswordApp {
+            constructor() {
+                this.init();
+            }
+
+            async init() {
+                const yearElement = document.getElementById('current-year');
+                if (yearElement) {
+                    yearElement.textContent = new Date().getFullYear();
+                }
+
+                // Verificar si hay una sesión activa
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+            }
+
+            async handleSubmit(event) {
+                event.preventDefault();
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                const errorDiv = document.getElementById('error');
+                const successDiv = document.getElementById('success');
+                const btn = document.getElementById('submit-btn');
+
+                errorDiv.classList.add('hidden');
+                successDiv.classList.add('hidden');
+
+                if (newPassword !== confirmPassword) {
+                    errorDiv.textContent = 'Las contraseñas no coinciden';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cambiando...';
+
+                try {
+                    await rubricManager.updatePassword(newPassword);
+                    successDiv.textContent = '¡Contraseña cambiada exitosamente! Redirigiendo...';
+                    successDiv.classList.remove('hidden');
+
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } catch (error) {
+                    errorDiv.textContent = error.message || 'Error al cambiar contraseña';
+                    errorDiv.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Cambiar Contraseña</span><i class="fa-solid fa-check"></i>';
+                }
+            }
+        }
+
+        let changePasswordApp;
+        window.addEventListener('DOMContentLoaded', () => {
+            changePasswordApp = new ChangePasswordApp();
+        });
+    </script>
+</body>
+</html>
