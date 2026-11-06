@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación Pública - Sistema de Rúbricas</title>
+    <link rel="icon" href="img/ico.ico" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md py-6 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-wider uppercase">Sistema de Rúbricas</h1>
+            <p class="text-blue-200 text-sm">Gestión y evaluación con rúbricas personalizables</p>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-12">
+        <div id="loading-message" class="text-center py-12">
+            <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p class="text-slate-600">Cargando rúbrica...</p>
+        </div>
+
+        <div id="evaluation-content" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+                <!-- Título -->
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-slate-900 uppercase tracking-wider">PLANILLA DE EVALUACIÓN</h2>
+                    <p id="rubric-name-display" class="text-slate-600 mt-2"></p>
+                </div>
+
+                <!-- Campos superiores -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block font-bold text-sm text-slate-700 uppercase mb-2">GRADO / SALÓN</label>
+                        <select id="input-grado" onchange="publicEval.onGradeChange()" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-sm text-slate-700 uppercase mb-2">NOMBRE DEL EMPRENDIMIENTO</label>
+                        <select id="input-nombre" onchange="publicEval.onNombreChange()" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                        <input type="text" id="input-nombre-custom" class="hidden w-full mt-2 bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500" placeholder="Escribe el nombre del emprendimiento">
+                    </div>
+                </div>
+
+                <!-- Tabla de Criterios -->
+                <div class="overflow-x-auto mb-8">
+                    <table class="w-full text-sm text-left text-slate-700 border-collapse border-2 border-slate-300">
+                        <thead class="text-xs text-white uppercase bg-slate-800">
+                            <tr>
+                                <th class="px-4 py-3 border-r-2 border-slate-700 w-1/4">CRITERIO</th>
+                                <th class="px-4 py-3 border-r-2 border-slate-700 w-2/4">¿QUÉ SE EVALÚA?</th>
+                                <th class="px-4 py-3 text-center w-24">PESO</th>
+                                <th class="px-4 py-3 text-center w-24">CALIFICACIÓN (1 A 5)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evaluation-tbody" class="divide-y divide-slate-200">
+                        </tbody>
+                        <tfoot class="bg-blue-600 text-white font-bold">
+                            <tr>
+                                <td colspan="2" class="px-4 py-3 uppercase tracking-wider text-sm border-r-2 border-blue-500">CALIFICACIÓN FINAL PONDERADA</td>
+                                <td class="px-4 py-3 text-center border-r-2 border-blue-500">100%</td>
+                                <td id="total-score-cell" class="px-4 py-3 text-center text-2xl">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="mb-8">
+                    <label class="block font-bold text-sm text-slate-700 uppercase mb-2">OBSERVACIONES DEL DOCENTE</label>
+                    <textarea id="input-observaciones" rows="4" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500" placeholder="Comentarios adicionales"></textarea>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex space-x-4">
+                    <button onclick="publicEval.resetForm()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-lg transition-all">
+                        <i class="fa-solid fa-eraser mr-2"></i>LIMPIAR
+                    </button>
+                    <button onclick="publicEval.saveCurrentGrade()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-all">
+                        <i class="fa-solid fa-save mr-2"></i>GUARDAR NOTA
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="error-message" class="hidden text-center py-12">
+            <i class="fa-solid fa-exclamation-triangle text-5xl text-rose-600 mb-4"></i>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Error</h3>
+            <p id="error-text" class="text-slate-600 mb-4">No se pudo cargar la rúbrica.</p>
+            <a href="index.html" class="inline-block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded transition-all">
+                Ir al Inicio
+            </a>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3 border border-slate-700">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="toast-message" class="text-sm font-medium">Operación realizada con éxito.</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-300 py-4 mt-auto text-center text-xs text-slate-500">
+        Sistema de Rúbricas - Fernando Oliveros Ocampo<br>
+        © <span id="current-year"></span> Todos los derechos reservados
+    </footer>
+
+    <script>
+        const SUPABASE_URL = 'https://lkoghgadefwibsadevsv.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_d34dxwXnPL8Okkcj0mWw9g_ZiL3XAT8';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        class PublicEvaluationApp {
+            constructor() {
+                this.rubricId = null;
+                this.rubric = null;
+                this.formState = {
+                    grado: '',
+                    nombre: '',
+                    observaciones: '',
+                    ratings: {}
+                };
+                this.init();
+            }
+
+            async init() {
+                const yearElement = document.getElementById('current-year');
+                if (yearElement) {
+                    yearElement.textContent = new Date().getFullYear();
+                }
+
+                const urlParams = new URLSearchParams(window.location.search);
+                this.rubricId = urlParams.get('rubric');
+
+                if (!this.rubricId) {
+                    this.showError('No se especificó una rúbrica');
+                    return;
+                }
+
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('rubricas')
+                        .select('*')
+                        .eq('id', this.rubricId)
+                        .eq('is_public', true)
+                        .single();
+
+                    if (error || !data) {
+                        console.error('Error loading rubric:', error);
+                        this.showError('Rúbrica no encontrada o no es pública');
+                        return;
+                    }
+
+                    this.rubric = data;
+                    document.getElementById('loading-message').classList.add('hidden');
+                    document.getElementById('evaluation-content').classList.remove('hidden');
+
+                    document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
+                    this.loadGradesDropdown();
+                    this.renderEvaluationTable();
+                } catch (error) {
+                    console.error('Error in init:', error);
+                    this.showError('Error al cargar la rúbrica: ' + error.message);
+                }
+            }
+
+            loadGradesDropdown() {
+                const gradoSelect = document.getElementById('input-grado');
+                const grados = this.rubric.grados ? Object.keys(this.rubric.grados) : [];
+
+                let html = '<option value="">-- Seleccione --</option>';
+                grados.forEach(grado => {
+                    html += `<option value="${grado}">${grado}</option>`;
+                });
+
+                gradoSelect.innerHTML = html;
+            }
+
+            updateEntrepreneurshipDropdown() {
+                const gradoSelect = document.getElementById('input-grado');
+                const nombreSelect = document.getElementById('input-nombre');
+                const currentGrade = gradoSelect.value;
+                const projects = (this.rubric.grados && this.rubric.grados[currentGrade]) ? this.rubric.grados[currentGrade] : [];
+
+                let html = '<option value="">-- Seleccione --</option>';
+                html += '<option value="OTRO">-- Otro (escribir nombre) --</option>';
+                projects.forEach(proj => {
+                    html += `<option value="${proj}">${proj}</option>`;
+                });
+                nombreSelect.innerHTML = html;
+            }
+
+            onGradeChange() {
+                this.formState.grado = document.getElementById('input-grado').value;
+                this.updateEntrepreneurshipDropdown();
+                document.getElementById('input-nombre-custom').classList.add('hidden');
+                document.getElementById('input-nombre-custom').value = '';
+            }
+
+            onNombreChange() {
+                const nombreSelect = document.getElementById('input-nombre');
+                const customInput = document.getElementById('input-nombre-custom');
+
+                if (nombreSelect.value === 'OTRO') {
+                    customInput.classList.remove('hidden');
+                    this.formState.nombre = customInput.value.trim();
+                } else {
+                    customInput.classList.add('hidden');
+                    this.formState.nombre = nombreSelect.value;
+                }
+            }
+
+            calculateFinalScore() {
+                let totalScore = 0;
+                let totalWeight = 0;
+
+                this.rubric.criterios.forEach(c => {
+                    const val = this.formState.ratings[c.id];
+                    const rating = (val !== '' && val !== undefined && !isNaN(val)) ? parseFloat(val) : 0;
+                    const weight = c.weight;
+                    totalScore += rating * (weight / 100);
+                    totalWeight += weight;
+                });
+
+                return {
+                    score: totalScore,
+                    weight: totalWeight
+                };
+            }
+
+            renderEvaluationTable() {
+                const tbody = document.getElementById('evaluation-tbody');
+                let html = '';
+
+                this.rubric.criterios.forEach(c => {
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-4 py-3 font-bold text-slate-800 border-r-2 border-slate-200">
+                                ${c.name}
+                            </td>
+                            <td class="px-4 py-3 text-xs text-slate-600 border-r-2 border-slate-200 leading-relaxed">
+                                ${c.description}
+                            </td>
+                            <td class="px-4 py-3 text-center font-bold text-slate-700 border-r-2 border-slate-200">
+                                ${c.weight}%
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <input type="number" min="1.0" max="5.0" step="0.1"
+                                       placeholder="—"
+                                       onchange="publicEval.updateRating('${c.id}', this.value)"
+                                       oninput="publicEval.updateRating('${c.id}', this.value)"
+                                       class="w-24 text-center font-extrabold bg-white border-2 border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-lg p-2 text-base">
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+            }
+
+            updateRating(criteriaId, val) {
+                if (val === '' || val === null) {
+                    this.formState.ratings[criteriaId] = '';
+                } else {
+                    let num = parseFloat(val);
+                    if (isNaN(num)) num = '';
+                    else if (num < 1.0) num = 1.0;
+                    else if (num > 5.0) num = 5.0;
+                    this.formState.ratings[criteriaId] = num;
+                }
+                this.updateScoreDisplay();
+            }
+
+            updateScoreDisplay() {
+                const result = this.calculateFinalScore();
+                document.getElementById('total-score-cell').textContent = result.score.toFixed(2);
+            }
+
+            async saveCurrentGrade() {
+                this.formState.grado = document.getElementById('input-grado').value;
+                const nombreSelect = document.getElementById('input-nombre');
+                const customInput = document.getElementById('input-nombre-custom');
+
+                if (nombreSelect.value === 'OTRO') {
+                    this.formState.nombre = customInput.value.trim();
+                } else {
+                    this.formState.nombre = nombreSelect.value;
+                }
+
+                this.formState.observaciones = document.getElementById('input-observaciones').value;
+
+                if (!this.formState.nombre.trim()) {
+                    this.showToast('Por favor seleccione el nombre del emprendimiento.');
+                    return;
+                }
+
+                const finalCalc = this.calculateFinalScore();
+                const recordId = 'public_' + Date.now();
+
+                const gradeRecord = {
+                    id: recordId,
+                    grado: this.formState.grado,
+                    nombre: this.formState.nombre.trim(),
+                    notaFinal: parseFloat(finalCalc.score.toFixed(2)),
+                    ratings: { ...this.formState.ratings },
+                    observaciones: this.formState.observaciones.trim() || 'Sin observaciones.',
+                    fecha: new Date().toISOString()
+                };
+
+                try {
+                    await supabaseClient
+                        .from('resultados')
+                        .insert({
+                            rubrica_id: this.rubricId,
+                            usuario_id: null,
+                            evaluador_id: 'anonymous',
+                            grado: gradeRecord.grado,
+                            nombre_proyecto: gradeRecord.nombre,
+                            ratings: gradeRecord.ratings,
+                            nota_final: gradeRecord.notaFinal,
+                            observaciones: gradeRecord.observaciones,
+                            fecha: gradeRecord.fecha
+                        });
+
+                    this.showToast('¡Evaluación guardada exitosamente!');
+                    this.resetForm();
+                } catch (error) {
+                    console.error('Error saving grade:', error);
+                    this.showToast('Error al guardar la evaluación: ' + error.message);
+                }
+            }
+
+            resetForm() {
+                this.formState = {
+                    grado: '',
+                    nombre: '',
+                    observaciones: '',
+                    ratings: {}
+                };
+
+                document.getElementById('input-grado').value = '';
+                document.getElementById('input-nombre').value = '';
+                document.getElementById('input-nombre-custom').value = '';
+                document.getElementById('input-nombre-custom').classList.add('hidden');
+                document.getElementById('input-observaciones').value = '';
+
+                this.rubric.criterios.forEach(c => {
+                    this.formState.ratings[c.id] = '';
+                });
+
+                this.renderEvaluationTable();
+                this.updateScoreDisplay();
+            }
+
+            showToast(message) {
+                const toast = document.getElementById('toast-notification');
+                const toastMessage = document.getElementById('toast-message');
+                toastMessage.textContent = message;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                    toast.classList.remove('translate-y-0', 'opacity-100');
+                }, 3000);
+            }
+
+            showError(message) {
+                document.getElementById('loading-message').classList.add('hidden');
+                document.getElementById('error-message').classList.remove('hidden');
+                document.getElementById('error-text').textContent = message;
+            }
+        }
+
+        let publicEval;
+        window.addEventListener('DOMContentLoaded', () => {
+            publicEval = new PublicEvaluationApp();
+        });
+    </script>
+</body>
+</html>

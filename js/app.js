@@ -46,15 +46,15 @@ class RubricManager {
 
 
     async signUp(email, password, nombre) {
-        const basePath = window.location.pathname.startsWith('/rubrica/')
-            ? '/rubrica'
+        const basePath = window.location.pathname.includes('/pages/')
+            ? ''
             : '';
 
         const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: window.location.origin + basePath + '/login.html',
+                emailRedirectTo: window.location.origin + basePath + '/pages/login.html',
                 data: {
                     nombre: nombre
                 }
@@ -80,12 +80,12 @@ class RubricManager {
     }
 
     async resetPassword(email) {
-        const basePath = window.location.pathname.startsWith('/rubrica/')
-            ? '/rubrica'
+        const basePath = window.location.pathname.includes('/pages/')
+            ? ''
             : '';
 
         const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + basePath + '/cambiar-contrasena.html'
+            redirectTo: window.location.origin + basePath + '/pages/cambiar-contrasena.html'
         });
 
         if (error) throw error;
@@ -132,6 +132,94 @@ class RubricManager {
         this.rubrics = data || [];
     }
 
+    async loadPublicRubrics() {
+        if (!this.currentUser) {
+            return [];
+        }
+
+        const { data, error } = await supabaseClient
+            .from('rubricas')
+            .select('*')
+            .eq('is_public', true)
+            .neq('usuario_id', this.currentUser.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading public rubrics:', error);
+            return [];
+        }
+
+        return data || [];
+    }
+
+    async loadMyPublicRubrics() {
+        if (!this.currentUser) {
+            return [];
+        }
+
+        const { data, error } = await supabaseClient
+            .from('rubricas')
+            .select('*')
+            .eq('is_public', true)
+            .eq('usuario_id', this.currentUser.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading my public rubrics:', error);
+            return [];
+        }
+
+        return data || [];
+    }
+
+    async loadRubricByShareCode(shareCode) {
+        const { data, error } = await supabaseClient
+            .from('rubricas')
+            .select('*')
+            .eq('share_code', shareCode)
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async toggleRubricPublic(rubricId, isPublic) {
+        const { data, error } = await supabaseClient
+            .from('rubricas')
+            .update({ is_public: isPublic })
+            .eq('id', rubricId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        await this.loadRubrics();
+        return data;
+    }
+
+    async generateShareCode(rubricId) {
+        const shareCode = this.generateRandomCode();
+
+        const { data, error } = await supabaseClient
+            .from('rubricas')
+            .update({ share_code: shareCode })
+            .eq('id', rubricId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        await this.loadRubrics();
+        return data;
+    }
+
+    generateRandomCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+
     async addRubric(nombre, descripcion, grados, criterios) {
         if (!this.currentUser) {
             throw new Error('Usuario no autenticado');
@@ -142,7 +230,9 @@ class RubricManager {
             nombre: nombre,
             descripcion: descripcion || 'Sin descripción',
             grados: grados || {},
-            criterios: criterios
+            criterios: criterios,
+            is_public: false,
+            share_code: null
         };
 
         const { data, error } = await supabaseClient
@@ -224,10 +314,11 @@ class RubricManager {
         }));
     }
 
-    async addGrade(rubricId, gradeRecord) {
+    async addGrade(rubricId, gradeRecord, isAnonymous = false) {
         const newRecord = {
             rubrica_id: rubricId,
-            usuario_id: this.currentUser.id,
+            usuario_id: isAnonymous ? null : this.currentUser.id,
+            evaluador_id: isAnonymous ? 'anonymous' : this.currentUser.id,
             grado: gradeRecord.grado,
             nombre_proyecto: gradeRecord.nombre,
             ratings: gradeRecord.ratings,
@@ -245,6 +336,49 @@ class RubricManager {
         if (error) throw error;
 
         return data;
+    }
+
+    async loadAllGrades(rubricId) {
+        const { data, error } = await supabaseClient
+            .from('resultados')
+            .select('*')
+            .eq('rubrica_id', rubricId)
+            .order('fecha', { ascending: false });
+
+        if (error) {
+            console.error('Error loading all grades:', error);
+            return [];
+        }
+
+        return (data || []).map(item => ({
+            id: item.id,
+            grado: item.grado,
+            nombre: item.nombre_proyecto,
+            notaFinal: item.nota_final,
+            ratings: item.ratings,
+            observaciones: item.observaciones,
+            fecha: item.fecha,
+            evaluador_id: item.evaluador_id
+        }));
+    }
+
+    async loadAllGradesForUser() {
+        if (!this.currentUser) {
+            return [];
+        }
+
+        const { data, error } = await supabaseClient
+            .from('resultados')
+            .select('*')
+            .eq('usuario_id', this.currentUser.id)
+            .order('fecha', { ascending: false });
+
+        if (error) {
+            console.error('Error loading user grades:', error);
+            return [];
+        }
+
+        return data || [];
     }
 
     async deleteGrade(rubricId, gradeId) {

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administrador de Rúbricas</title>
+    <link rel="icon" href="../img/ico.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -38,7 +39,7 @@
                     <i class="fa-solid fa-user"></i>
                     <span class="hidden sm:inline">Perfil</span>
                 </a>
-                <a href="index.html" class="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
+                <a href="../index.html" class="px-3 py-1 bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold rounded shadow transition-all flex items-center space-x-1">
                     <i class="fa-solid fa-home"></i>
                     <span class="hidden sm:inline">Inicio</span>
                 </a>
@@ -61,6 +62,49 @@
 
             <div id="rubrics-list" class="p-4 space-y-3">
                 <!-- Rúbricas cargadas dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Rúbricas Públicas -->
+        <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden mb-6">
+            <div class="bg-purple-700 text-white py-3 px-4 flex items-center justify-between">
+                <h2 class="font-bold text-sm tracking-wider uppercase">Rúbricas Públicas</h2>
+                <button onclick="admin.loadPublicRubrics()" class="px-4 py-2 bg-purple-600 hover:bg-purple-800 text-white text-xs font-bold rounded shadow transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-sync"></i>
+                    <span>Actualizar</span>
+                </button>
+            </div>
+
+            <div id="public-rubrics-list" class="p-4 space-y-3">
+                <!-- Rúbricas públicas cargadas dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Mis Rúbricas Públicas -->
+        <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden mb-6">
+            <div class="bg-indigo-700 text-white py-3 px-4 flex items-center justify-between">
+                <h2 class="font-bold text-sm tracking-wider uppercase">Mis Rúbricas Públicas</h2>
+            </div>
+
+            <div id="my-public-rubrics-list" class="p-4 space-y-3">
+                <!-- Mis rúbricas públicas cargadas dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Rúbricas Compartidas por Código -->
+        <div class="bg-white rounded-lg shadow-md border border-slate-300 overflow-hidden mb-6">
+            <div class="bg-amber-700 text-white py-3 px-4 flex items-center justify-between">
+                <h2 class="font-bold text-sm tracking-wider uppercase">Importar Rúbrica por Código</h2>
+            </div>
+
+            <div class="p-4">
+                <div class="flex space-x-3">
+                    <input type="text" id="share-code-input" class="flex-1 bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="Ingresa el código de la rúbrica (ej: ABC12345)">
+                    <button onclick="admin.importRubricByCode()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded shadow transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Importar</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -146,10 +190,16 @@
             </div>
 
             <div class="bg-slate-100 border-t border-slate-200 p-4 flex justify-between">
-                <button onclick="admin.editFromView()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase rounded shadow transition-all flex items-center space-x-2">
-                    <i class="fa-solid fa-pen"></i>
-                    <span>Editar</span>
-                </button>
+                <div class="flex space-x-3">
+                    <button id="edit-from-view-btn" onclick="admin.editFromView()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase rounded shadow transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-pen"></i>
+                        <span>Editar</span>
+                    </button>
+                    <button id="import-from-view-btn" onclick="admin.importFromView()" class="hidden px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs uppercase rounded shadow transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Importar</span>
+                    </button>
+                </div>
                 <div class="flex space-x-3">
                     <a id="use-rubric-link" href="#" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase rounded shadow-md transition-all flex items-center space-x-2">
                         <i class="fa-solid fa-play"></i>
@@ -168,7 +218,7 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="../js/app.js"></script>
     <script>
         class AdminApp {
             constructor() {
@@ -189,6 +239,8 @@
                     return;
                 }
                 this.renderRubricsList();
+                this.loadPublicRubrics();
+                this.loadMyPublicRubrics();
             }
 
             // --- RENDERIZADO DE LISTA DE RÚBRICAS ---
@@ -215,7 +267,11 @@
                         <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
-                                    <h3 class="font-bold text-slate-900 text-sm mb-1">${rubric.nombre}</h3>
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <h3 class="font-bold text-slate-900 text-sm">${rubric.nombre}</h3>
+                                        ${rubric.is_public ? '<span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded">Pública</span>' : ''}
+                                        ${rubric.share_code ? '<span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-semibold rounded">Compartida</span>' : ''}
+                                    </div>
                                     <p class="text-xs text-slate-600 mb-2">${rubric.descripcion}</p>
                                     <div class="flex items-center space-x-4 text-xs text-slate-500">
                                         <span><i class="fa-solid fa-list-check mr-1"></i> ${rubric.criterios.length} criterios</span>
@@ -224,10 +280,19 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-2 ml-4">
+                                    <button onclick="admin.togglePublic('${rubric.id}', ${rubric.is_public})" class="px-3 py-1.5 ${rubric.is_public ? 'bg-purple-100 hover:bg-purple-200 text-purple-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} text-xs font-semibold rounded transition-all flex items-center space-x-1" title="${rubric.is_public ? 'Hacer privada' : 'Hacer pública'}">
+                                        <i class="fa-solid fa-globe"></i>
+                                    </button>
+                                    <button onclick="admin.generatePublicLink('${rubric.id}')" class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Generar link público">
+                                        <i class="fa-solid fa-link"></i>
+                                    </button>
+                                    <button onclick="admin.generateShareCode('${rubric.id}')" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Generar código">
+                                        <i class="fa-solid fa-share-nodes"></i>
+                                    </button>
                                     <button onclick="admin.viewRubric('${rubric.id}')" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Ver">
                                         <i class="fa-solid fa-eye"></i>
                                     </button>
-                                    <button onclick="admin.editRubric('${rubric.id}')" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Editar">
+                                    <button onclick="admin.editRubric('${rubric.id}')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Editar">
                                         <i class="fa-solid fa-pen"></i>
                                     </button>
                                     <button onclick="admin.deleteRubric('${rubric.id}')" class="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Eliminar">
@@ -492,11 +557,306 @@
 
             closeViewModal() {
                 document.getElementById('view-modal').classList.add('hidden');
+                document.getElementById('import-from-view-btn').classList.add('hidden');
+                document.getElementById('edit-from-view-btn').classList.remove('hidden');
+                document.getElementById('use-rubric-link').parentElement.classList.remove('hidden');
+            }
+
+            async importFromView() {
+                if (!this.currentPublicRubric) {
+                    this.showToast('No hay rúbrica para importar');
+                    return;
+                }
+
+                try {
+                    await rubricManager.addRubric(
+                        this.currentPublicRubric.nombre + ' (copia)',
+                        this.currentPublicRubric.descripcion,
+                        this.currentPublicRubric.grados,
+                        this.currentPublicRubric.criterios
+                    );
+                    this.closeViewModal();
+                    this.renderRubricsList();
+                    this.showToast('Rúbrica importada exitosamente');
+                } catch (error) {
+                    this.showToast('Error al importar rúbrica: ' + error.message);
+                }
             }
 
             editFromView() {
                 this.closeViewModal();
                 this.editRubric(this.currentRubricId);
+            }
+
+            // --- COMPARTIR RÚBRICAS ---
+            async togglePublic(id, isPublic) {
+                try {
+                    await rubricManager.toggleRubricPublic(id, !isPublic);
+                    this.renderRubricsList();
+                    this.loadPublicRubrics(); // Recargar rúbricas públicas también
+                    this.showToast(!isPublic ? 'Rúbrica hecha pública' : 'Rúbrica hecha privada');
+                } catch (error) {
+                    this.showToast('Error al cambiar visibilidad: ' + error.message);
+                }
+            }
+
+            async generateShareCode(id) {
+                try {
+                    const rubric = await rubricManager.generateShareCode(id);
+                    navigator.clipboard.writeText(rubric.share_code);
+                    this.showToast(`Código generado: ${rubric.share_code} (copiado al portapapeles)`);
+                    this.renderRubricsList();
+                } catch (error) {
+                    this.showToast('Error al generar código: ' + error.message);
+                }
+            }
+
+            async generatePublicLink(id) {
+                try {
+                    // Primero verificar si es pública
+                    const rubric = rubricManager.getRubric(id);
+                    if (!rubric) {
+                        this.showToast('Rúbrica no encontrada');
+                        return;
+                    }
+
+                    if (!rubric.is_public) {
+                        if (!confirm('La rúbrica debe ser pública para generar un link. ¿Deseas hacerla pública ahora?')) {
+                            return;
+                        }
+                        await rubricManager.toggleRubricPublic(id, true);
+                    }
+
+                    const publicLink = `${window.location.origin}/evaluacion-publica.html?rubric=${id}`;
+                    navigator.clipboard.writeText(publicLink);
+                    this.showToast('Link público copiado al portapapeles');
+                    this.renderRubricsList();
+                } catch (error) {
+                    this.showToast('Error al generar link: ' + error.message);
+                }
+            }
+
+            async loadPublicRubrics() {
+                try {
+                    const publicRubrics = await rubricManager.loadPublicRubrics();
+                    this.renderPublicRubricsList(publicRubrics);
+                } catch (error) {
+                    this.showToast('Error al cargar rúbricas públicas: ' + error.message);
+                }
+            }
+
+            async loadMyPublicRubrics() {
+                try {
+                    const myPublicRubrics = await rubricManager.loadMyPublicRubrics();
+                    this.renderMyPublicRubricsList(myPublicRubrics);
+                } catch (error) {
+                    this.showToast('Error al cargar mis rúbricas públicas: ' + error.message);
+                }
+            }
+
+            renderMyPublicRubricsList(myPublicRubrics) {
+                const container = document.getElementById('my-public-rubrics-list');
+
+                if (myPublicRubrics.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-globe text-3xl mb-2"></i>
+                            <p class="text-sm">No tienes rúbricas públicas.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                myPublicRubrics.forEach(rubric => {
+                    const totalWeight = rubric.criterios.reduce((sum, c) => sum + c.weight, 0);
+                    const fecha = new Date(rubric.updated_at || rubric.created_at).toLocaleDateString('es-ES');
+
+                    html += `
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <h3 class="font-bold text-slate-900 text-sm">${rubric.nombre}</h3>
+                                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded">Pública</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mb-2">${rubric.descripcion}</p>
+                                    <div class="flex items-center space-x-4 text-xs text-slate-500">
+                                        <span><i class="fa-solid fa-list-check mr-1"></i> ${rubric.criterios.length} criterios</span>
+                                        <span><i class="fa-solid fa-percent mr-1"></i> Peso total: ${totalWeight}%</span>
+                                        <span><i class="fa-solid fa-calendar mr-1"></i> ${fecha}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <button onclick="admin.generatePublicLink('${rubric.id}')" class="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Generar link público">
+                                        <i class="fa-solid fa-link"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            }
+
+            renderPublicRubricsList(publicRubrics) {
+                const container = document.getElementById('public-rubrics-list');
+
+                if (publicRubrics.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-globe text-3xl mb-2"></i>
+                            <p class="text-sm">No hay rúbricas públicas disponibles.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                publicRubrics.forEach(rubric => {
+                    const totalWeight = rubric.criterios.reduce((sum, c) => sum + c.weight, 0);
+                    const fecha = new Date(rubric.updated_at || rubric.created_at).toLocaleDateString('es-ES');
+
+                    html += `
+                        <div class="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-1">
+                                        <h3 class="font-bold text-slate-900 text-sm">${rubric.nombre}</h3>
+                                        <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded">Pública</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mb-2">${rubric.descripcion}</p>
+                                    <div class="flex items-center space-x-4 text-xs text-slate-500">
+                                        <span><i class="fa-solid fa-list-check mr-1"></i> ${rubric.criterios.length} criterios</span>
+                                        <span><i class="fa-solid fa-percent mr-1"></i> Peso total: ${totalWeight}%</span>
+                                        <span><i class="fa-solid fa-calendar mr-1"></i> ${fecha}</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <button onclick="admin.viewPublicRubric('${rubric.id}')" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Ver rúbrica">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                    <button onclick="admin.importPublicRubric('${rubric.id}')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold rounded transition-all flex items-center space-x-1" title="Importar a mis rúbricas">
+                                        <i class="fa-solid fa-download"></i>
+                                        <span>Importar</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            }
+
+            async viewPublicRubric(id) {
+                try {
+                    const publicRubrics = await rubricManager.loadPublicRubrics();
+                    const rubric = publicRubrics.find(r => r.id === id);
+                    if (!rubric) {
+                        this.showToast('Rúbrica no encontrada');
+                        return;
+                    }
+
+                    this.currentRubricId = id;
+                    this.isViewingPublicRubric = true;
+                    this.currentPublicRubric = rubric;
+                    document.getElementById('view-modal-title').textContent = rubric.nombre;
+                    document.getElementById('import-from-view-btn').classList.remove('hidden');
+                    document.getElementById('edit-from-view-btn').classList.add('hidden');
+                    document.getElementById('use-rubric-link').parentElement.classList.add('hidden');
+
+                    let html = `
+                        <div class="mb-4">
+                            <p class="text-sm text-slate-600">${rubric.descripcion}</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-slate-700 border-collapse">
+                                <thead class="text-xs text-white uppercase bg-slate-800">
+                                    <tr>
+                                        <th class="px-4 py-3 border-r border-slate-700 w-1/4">Criterio</th>
+                                        <th class="px-4 py-3 border-r border-slate-700 w-2/4">¿Qué se evalúa?</th>
+                                        <th class="px-4 py-3 text-center w-24">Peso</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                    `;
+
+                    rubric.criterios.forEach(c => {
+                        html += `
+                            <tr>
+                                <td class="px-4 py-3 font-bold text-slate-800 border-r border-slate-200">${c.name}</td>
+                                <td class="px-4 py-3 text-xs text-slate-600 border-r border-slate-200">${c.description}</td>
+                                <td class="px-4 py-3 text-center font-bold text-slate-700">${c.weight}%</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    document.getElementById('view-rubric-content').innerHTML = html;
+                    document.getElementById('view-modal').classList.remove('hidden');
+                } catch (error) {
+                    this.showToast('Error al cargar rúbrica: ' + error.message);
+                }
+            }
+
+            async importPublicRubric(id) {
+                try {
+                    // Buscar en rúbricas públicas
+                    const publicRubrics = await rubricManager.loadPublicRubrics();
+                    const rubric = publicRubrics.find(r => r.id === id);
+                    if (!rubric) {
+                        this.showToast('Rúbrica no encontrada');
+                        return;
+                    }
+
+                    // Crear copia para el usuario actual
+                    await rubricManager.addRubric(
+                        rubric.nombre + ' (copia)',
+                        rubric.descripcion,
+                        rubric.grados,
+                        rubric.criterios
+                    );
+                    this.renderRubricsList();
+                    this.showToast('Rúbrica importada exitosamente');
+                } catch (error) {
+                    this.showToast('Error al importar rúbrica: ' + error.message);
+                }
+            }
+
+            async importRubricByCode() {
+                const code = document.getElementById('share-code-input').value.trim().toUpperCase();
+                if (!code) {
+                    this.showToast('Por favor ingresa un código');
+                    return;
+                }
+
+                try {
+                    const rubric = await rubricManager.loadRubricByShareCode(code);
+                    if (!rubric) {
+                        this.showToast('Código no válido o rúbrica no encontrada');
+                        return;
+                    }
+
+                    // Crear copia para el usuario actual
+                    await rubricManager.addRubric(
+                        rubric.nombre + ' (copia)',
+                        rubric.descripcion,
+                        rubric.grados,
+                        rubric.criterios
+                    );
+                    document.getElementById('share-code-input').value = '';
+                    this.renderRubricsList();
+                    this.showToast('Rúbrica importada exitosamente');
+                } catch (error) {
+                    this.showToast('Error al importar rúbrica: ' + error.message);
+                }
             }
 
             // --- UTILIDADES ---
