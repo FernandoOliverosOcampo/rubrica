@@ -627,7 +627,7 @@
                         await rubricManager.toggleRubricPublic(id, true);
                     }
 
-                    const publicLink = `${window.location.origin}/evaluacion-publica.html?rubric=${id}`;
+                    const publicLink = `${window.location.origin}/rubrica/evaluacion-publica.html?rubric=${id}`;
                     navigator.clipboard.writeText(publicLink);
                     this.showToast('Link público copiado al portapapeles');
                     this.renderRubricsList();
