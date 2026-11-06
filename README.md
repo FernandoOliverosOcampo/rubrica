@@ -1,4 +1,4 @@
-# Sistema de Rúbricas - I.E. Santa Teresita
+# Sistema de Rúbricas - Gestión y evaluación con rúbricas personalizables
 
 Sistema de gestión y evaluación con rúbricas personalizables para I.E. Santa Teresita. Permite crear rúbricas personalizadas, evaluar proyectos, compartir rúbricas con otros usuarios y consolidar resultados de múltiples evaluadores.
 
