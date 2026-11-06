@@ -45,16 +45,52 @@
             <p class="text-slate-600">Cargando rúbrica...</p>
         </div>
 
+        <!-- Pantalla de ingreso de docente -->
+        <div id="docente-login" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8 max-w-md mx-auto">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-user-tie text-3xl text-blue-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Bienvenido</h2>
+                    <p class="text-slate-600 text-sm">Ingresa tu nombre para comenzar a evaluar</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block font-bold text-sm text-slate-700 uppercase mb-2">Tu Nombre</label>
+                    <input type="text" id="docente-name-input" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500" placeholder="Ingresa tu nombre completo">
+                </div>
+                <button onclick="publicEval.enterAsDocente()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-all">
+                    <i class="fa-solid fa-arrow-right mr-2"></i>Comenzar a Evaluar
+                </button>
+            </div>
+        </div>
+
         <div id="evaluation-content" class="hidden">
             <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
-                <!-- Título -->
-                <div class="text-center mb-8">
-                    <h2 class="text-2xl font-bold text-slate-900 uppercase tracking-wider">PLANILLA DE EVALUACIÓN</h2>
-                    <p id="rubric-name-display" class="text-slate-600 mt-2"></p>
+                <!-- Tabs -->
+                <div class="flex border-b border-slate-200 mb-6">
+                    <button id="tab-evaluacion" onclick="publicEval.switchTab('evaluacion')" class="flex-1 py-3 px-4 text-sm font-semibold transition-all bg-blue-600 text-white">
+                        <i class="fa-solid fa-clipboard-check mr-2"></i>Evaluación
+                    </button>
+                    <button id="tab-comparativo" onclick="publicEval.switchTab('comparativo')" class="flex-1 py-3 px-4 text-sm font-semibold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200">
+                        <i class="fa-solid fa-chart-column mr-2"></i>Comparativo
+                    </button>
                 </div>
 
+                <!-- Tab Evaluación -->
+                <div id="tab-evaluacion-content">
+                    <!-- Título -->
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold text-slate-900 uppercase tracking-wider">PLANILLA DE EVALUACIÓN</h2>
+                        <p id="rubric-name-display" class="text-slate-600 mt-2"></p>
+                    </div>
+
                 <!-- Campos superiores -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div>
+                        <label class="block font-bold text-sm text-slate-700 uppercase mb-2">NOMBRE DEL DOCENTE</label>
+                        <input type="text" id="input-docente" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500" placeholder="Tu nombre">
+                    </div>
                     <div>
                         <label class="block font-bold text-sm text-slate-700 uppercase mb-2">GRADO / SALÓN</label>
                         <select id="input-grado" onchange="publicEval.onGradeChange()" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500">
@@ -108,6 +144,31 @@
                         <i class="fa-solid fa-save mr-2"></i>GUARDAR NOTA
                     </button>
                 </div>
+                </div>
+
+                <!-- Tab Comparativo -->
+                <div id="tab-comparativo-content" class="hidden">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold text-slate-900 uppercase tracking-wider">COMPARATIVO DE EVALUACIONES</h2>
+                        <p id="rubric-name-display-2" class="text-slate-600 mt-2"></p>
+                    </div>
+
+                    <!-- Botón de limpiar -->
+                    <div class="flex justify-end mb-6">
+                        <button onclick="publicEval.clearAllComparisons()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded shadow transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Limpiar Todo</span>
+                        </button>
+                    </div>
+
+                    <!-- Tabla Comparativa -->
+                    <div id="comparative-tables-container" class="space-y-8">
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-clipboard-list text-4xl mb-2"></i>
+                            <p class="text-sm">No hay evaluaciones registradas.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -145,11 +206,16 @@
                 this.rubricId = null;
                 this.rubric = null;
                 this.formState = {
+                    docente: '',
                     grado: '',
                     nombre: '',
                     observaciones: '',
                     ratings: {}
                 };
+                this.comparativeList = [];
+                this.activeTab = 'evaluacion';
+                this.editingId = null;
+                this.currentDocente = localStorage.getItem('currentDocente') || '';
                 this.init();
             }
 
@@ -183,15 +249,99 @@
 
                     this.rubric = data;
                     document.getElementById('loading-message').classList.add('hidden');
-                    document.getElementById('evaluation-content').classList.remove('hidden');
 
-                    document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
-                    this.loadGradesDropdown();
-                    this.renderEvaluationTable();
+                    // Verificar si ya hay un docente guardado
+                    this.currentDocente = localStorage.getItem('currentDocente');
+
+                    if (!this.currentDocente) {
+                        document.getElementById('docente-login').classList.remove('hidden');
+                    } else {
+                        // Mostrar pantalla de bienvenida con opción de continuar o cambiar
+                        document.getElementById('docente-login').classList.remove('hidden');
+                        document.getElementById('docente-login').innerHTML = `
+                            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8 max-w-md mx-auto">
+                                <div class="text-center mb-6">
+                                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fa-solid fa-user-tie text-3xl text-blue-600"></i>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-slate-900 mb-2">¡Hola de nuevo!</h2>
+                                    <p class="text-slate-600 text-sm">Bienvenido de nuevo, <strong>${this.currentDocente}</strong></p>
+                                </div>
+                                <div class="space-y-4">
+                                    <button onclick="publicEval.continueAsDocente()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-all">
+                                        <i class="fa-solid fa-arrow-right mr-2"></i>Continuar como ${this.currentDocente}
+                                    </button>
+                                    <button onclick="publicEval.changeDocente()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-lg transition-all">
+                                        <i class="fa-solid fa-user-xmark mr-2"></i>Cambiar de docente
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
                 } catch (error) {
                     console.error('Error in init:', error);
                     this.showError('Error al cargar la rúbrica: ' + error.message);
                 }
+            }
+
+            continueAsDocente() {
+                document.getElementById('docente-login').classList.add('hidden');
+                document.getElementById('evaluation-content').classList.remove('hidden');
+                document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
+                document.getElementById('rubric-name-display-2').textContent = this.rubric.nombre;
+                this.formState.docente = this.currentDocente;
+                document.getElementById('input-docente').value = this.currentDocente;
+                this.loadGradesDropdown();
+                this.renderEvaluationTable();
+                this.loadComparativeData();
+            }
+
+            enterAsDocente() {
+                const docenteName = document.getElementById('docente-name-input').value.trim();
+                if (!docenteName) {
+                    this.showToast('Por favor ingresa tu nombre');
+                    return;
+                }
+
+                this.currentDocente = docenteName;
+                localStorage.setItem('currentDocente', docenteName);
+                this.formState.docente = docenteName;
+
+                document.getElementById('docente-login').classList.add('hidden');
+                document.getElementById('evaluation-content').classList.remove('hidden');
+                document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
+                document.getElementById('rubric-name-display-2').textContent = this.rubric.nombre;
+                document.getElementById('input-docente').value = docenteName;
+                this.loadGradesDropdown();
+                this.renderEvaluationTable();
+                this.loadComparativeData();
+            }
+
+            changeDocente() {
+                localStorage.removeItem('currentDocente');
+                this.currentDocente = '';
+                this.formState.docente = '';
+                document.getElementById('evaluation-content').classList.add('hidden');
+                document.getElementById('docente-login').classList.remove('hidden');
+                // Restaurar el formulario original de ingreso
+                document.getElementById('docente-login').innerHTML = `
+                    <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8 max-w-md mx-auto">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-solid fa-user-tie text-3xl text-blue-600"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-900 mb-2">Bienvenido</h2>
+                            <p class="text-slate-600 text-sm">Ingresa tu nombre para comenzar a evaluar</p>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block font-bold text-sm text-slate-700 uppercase mb-2">Tu Nombre</label>
+                            <input type="text" id="docente-name-input" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500" placeholder="Ingresa tu nombre completo">
+                        </div>
+                        <button onclick="publicEval.enterAsDocente()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition-all">
+                            <i class="fa-solid fa-arrow-right mr-2"></i>Comenzar a Evaluar
+                        </button>
+                    </div>
+                `;
             }
 
             loadGradesDropdown() {
@@ -263,6 +413,7 @@
                 let html = '';
 
                 this.rubric.criterios.forEach(c => {
+                    const rating = this.formState.ratings[c.id] || '';
                     html += `
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-4 py-3 font-bold text-slate-800 border-r-2 border-slate-200">
@@ -276,10 +427,11 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <input type="number" min="1.0" max="5.0" step="0.1"
+                                       value="${rating}"
                                        placeholder="—"
                                        onchange="publicEval.updateRating('${c.id}', this.value)"
                                        oninput="publicEval.updateRating('${c.id}', this.value)"
-                                       class="w-24 text-center font-extrabold bg-white border-2 border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-lg p-2 text-base">
+                                       class="w-24 text-center font-extrabold bg-white border-2 border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg p-2 text-base">
                             </td>
                         </tr>
                     `;
@@ -307,6 +459,7 @@
             }
 
             async saveCurrentGrade() {
+                this.formState.docente = document.getElementById('input-docente').value.trim();
                 this.formState.grado = document.getElementById('input-grado').value;
                 const nombreSelect = document.getElementById('input-nombre');
                 const customInput = document.getElementById('input-nombre-custom');
@@ -324,13 +477,20 @@
                     return;
                 }
 
+                if (!this.formState.docente.trim()) {
+                    this.showToast('Por favor ingresa tu nombre de docente.');
+                    return;
+                }
+
                 const finalCalc = this.calculateFinalScore();
-                const recordId = 'public_' + Date.now();
+                const isEditing = this.editingId !== null;
+                const recordId = isEditing ? this.editingId : 'public_' + Date.now();
 
                 const gradeRecord = {
                     id: recordId,
                     grado: this.formState.grado,
                     nombre: this.formState.nombre.trim(),
+                    docente: this.formState.docente.trim(),
                     notaFinal: parseFloat(finalCalc.score.toFixed(2)),
                     ratings: { ...this.formState.ratings },
                     observaciones: this.formState.observaciones.trim() || 'Sin observaciones.',
@@ -338,22 +498,43 @@
                 };
 
                 try {
-                    await supabaseClient
-                        .from('resultados')
-                        .insert({
-                            rubrica_id: this.rubricId,
-                            usuario_id: null,
-                            evaluador_id: 'anonymous',
-                            grado: gradeRecord.grado,
-                            nombre_proyecto: gradeRecord.nombre,
-                            ratings: gradeRecord.ratings,
-                            nota_final: gradeRecord.notaFinal,
-                            observaciones: gradeRecord.observaciones,
-                            fecha: gradeRecord.fecha
-                        });
+                    if (isEditing) {
+                        // Update existing evaluation
+                        await supabaseClient
+                            .from('resultados')
+                            .update({
+                                nombre_docente: gradeRecord.docente,
+                                grado: gradeRecord.grado,
+                                nombre_proyecto: gradeRecord.nombre,
+                                ratings: gradeRecord.ratings,
+                                nota_final: gradeRecord.notaFinal,
+                                observaciones: gradeRecord.observaciones
+                            })
+                            .eq('id', this.editingId);
 
-                    this.showToast('¡Evaluación guardada exitosamente!');
+                        this.showToast('¡Evaluación actualizada exitosamente!');
+                    } else {
+                        // Insert new evaluation
+                        await supabaseClient
+                            .from('resultados')
+                            .insert({
+                                rubrica_id: this.rubricId,
+                                usuario_id: null,
+                                evaluador_id: 'anonymous',
+                                nombre_docente: gradeRecord.docente,
+                                grado: gradeRecord.grado,
+                                nombre_proyecto: gradeRecord.nombre,
+                                ratings: gradeRecord.ratings,
+                                nota_final: gradeRecord.notaFinal,
+                                observaciones: gradeRecord.observaciones,
+                                fecha: gradeRecord.fecha
+                            });
+
+                        this.showToast('¡Evaluación guardada exitosamente!');
+                    }
+
                     this.resetForm();
+                    this.loadComparativeData();
                 } catch (error) {
                     console.error('Error saving grade:', error);
                     this.showToast('Error al guardar la evaluación: ' + error.message);
@@ -361,13 +542,16 @@
             }
 
             resetForm() {
+                this.editingId = null;
                 this.formState = {
+                    docente: '',
                     grado: '',
                     nombre: '',
                     observaciones: '',
                     ratings: {}
                 };
 
+                document.getElementById('input-docente').value = '';
                 document.getElementById('input-grado').value = '';
                 document.getElementById('input-nombre').value = '';
                 document.getElementById('input-nombre-custom').value = '';
@@ -380,6 +564,226 @@
 
                 this.renderEvaluationTable();
                 this.updateScoreDisplay();
+            }
+
+            switchTab(tab) {
+                this.activeTab = tab;
+                const tabEvaluacion = document.getElementById('tab-evaluacion');
+                const tabComparativo = document.getElementById('tab-comparativo');
+                const contentEvaluacion = document.getElementById('tab-evaluacion-content');
+                const contentComparativo = document.getElementById('tab-comparativo-content');
+
+                if (tab === 'evaluacion') {
+                    tabEvaluacion.classList.add('bg-blue-600', 'text-white');
+                    tabEvaluacion.classList.remove('bg-slate-100', 'text-slate-700');
+                    tabComparativo.classList.remove('bg-blue-600', 'text-white');
+                    tabComparativo.classList.add('bg-slate-100', 'text-slate-700');
+                    contentEvaluacion.classList.remove('hidden');
+                    contentComparativo.classList.add('hidden');
+                } else {
+                    tabComparativo.classList.add('bg-blue-600', 'text-white');
+                    tabComparativo.classList.remove('bg-slate-100', 'text-slate-700');
+                    tabEvaluacion.classList.remove('bg-blue-600', 'text-white');
+                    tabEvaluacion.classList.add('bg-slate-100', 'text-slate-700');
+                    contentComparativo.classList.remove('hidden');
+                    contentEvaluacion.classList.add('hidden');
+                    this.loadComparativeData();
+                }
+            }
+
+            async loadComparativeData() {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('resultados')
+                        .select('*')
+                        .eq('rubrica_id', this.rubricId)
+                        .eq('evaluador_id', 'anonymous')
+                        .eq('nombre_docente', this.currentDocente)
+                        .order('fecha', { ascending: false });
+
+                    if (error) {
+                        console.error('Error loading comparative data:', error);
+                        this.comparativeList = [];
+                        return;
+                    }
+
+                    this.comparativeList = (data || []).map(item => ({
+                        id: item.id,
+                        grado: item.grado,
+                        nombre: item.nombre_proyecto,
+                        docente: item.nombre_docente,
+                        notaFinal: item.nota_final,
+                        ratings: item.ratings,
+                        observaciones: item.observaciones,
+                        fecha: item.fecha
+                    }));
+
+                    this.renderComparativeTab();
+                } catch (error) {
+                    console.error('Error in loadComparativeData:', error);
+                }
+            }
+
+            populateDocenteFilter(docentes) {
+                const select = document.getElementById('filter-docente');
+                let html = '<option value="TODOS">Todos los docentes</option>';
+                docentes.forEach(docente => {
+                    html += `<option value="${docente}">${docente}</option>`;
+                });
+                select.innerHTML = html;
+            }
+
+            populateGradoFilter() {
+                const select = document.getElementById('filter-grado');
+                const grados = [...new Set(this.comparativeList.map(g => g.grado).filter(g => g))];
+                let html = '<option value="TODOS">Todos</option>';
+                grados.forEach(grado => {
+                    html += `<option value="${grado}">${grado}</option>`;
+                });
+                select.innerHTML = html;
+            }
+
+            renderComparativeTab(list = null) {
+                const container = document.getElementById('comparative-tables-container');
+                const displayList = list || this.comparativeList;
+
+                if (displayList.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-clipboard-list text-4xl mb-2"></i>
+                            <p class="text-sm">No hay evaluaciones registradas.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                displayList.forEach(grade => {
+                    const fecha = new Date(grade.fecha).toLocaleString('es-ES');
+
+                    html += `
+                        <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                            <div class="bg-blue-600 text-white py-3 px-4 flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm">${grade.nombre}</h3>
+                                    <p class="text-xs text-blue-200">${grade.grado} • Docente: ${grade.docente || 'No especificado'}</p>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold">${grade.notaFinal}</p>
+                                        <p class="text-xs text-blue-200">Puntos</p>
+                                    </div>
+                                    <button onclick="publicEval.editGrade('${grade.id}')" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-blue-700 text-xs font-semibold rounded transition-all flex items-center space-x-1">
+                                        <i class="fa-solid fa-pen"></i>
+                                        <span>Editar</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <table class="w-full text-sm text-left text-slate-700 border-collapse">
+                                    <thead class="text-xs text-white uppercase bg-slate-800">
+                                        <tr>
+                                            <th class="px-4 py-2 border-r border-slate-700">Criterio</th>
+                                            <th class="px-4 py-2 border-r border-slate-700">Peso</th>
+                                            <th class="px-4 py-2 text-center">Nota</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200">
+                    `;
+
+                    this.rubric.criterios.forEach(c => {
+                        const rating = grade.ratings[c.id] || 0;
+                        html += `
+                            <tr>
+                                <td class="px-4 py-2 border-r border-slate-200">${c.name}</td>
+                                <td class="px-4 py-2 text-center border-r border-slate-200">${c.weight}%</td>
+                                <td class="px-4 py-2 text-center font-bold ${rating >= 4 ? 'text-emerald-600' : rating >= 3 ? 'text-amber-600' : 'text-rose-600'}">${rating}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                    </tbody>
+                                </table>
+                                <div class="mt-4 p-3 bg-slate-50 rounded-lg">
+                                    <p class="text-xs text-slate-600 mb-1"><strong>Observaciones:</strong></p>
+                                    <p class="text-sm text-slate-800">${grade.observaciones || 'Sin observaciones'}</p>
+                                </div>
+                                <div class="mt-2 text-xs text-slate-500">
+                                    Evaluado el: ${fecha}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            }
+
+            clearAllComparisons() {
+                if (confirm('¿Estás seguro de limpiar todas las evaluaciones? Esta acción no se puede deshacer.')) {
+                    this.comparativeList = [];
+                    this.renderComparativeTab();
+                    this.showToast('Evaluaciones limpiadas');
+                }
+            }
+
+            filterComparative() {
+                const filterDocente = document.getElementById('filter-docente').value.toLowerCase().trim();
+                const filterGrado = document.getElementById('filter-grado').value;
+
+                const filteredList = this.comparativeList.filter(grade => {
+                    const matchDocente = !filterDocente || (grade.docente && grade.docente.toLowerCase().includes(filterDocente));
+                    const matchGrado = filterGrado === 'TODOS' || grade.grado === filterGrado;
+                    return matchDocente && matchGrado;
+                });
+
+                this.renderComparativeTab(filteredList);
+            }
+
+            async editGrade(id) {
+                const grade = this.comparativeList.find(g => g.id === id);
+                if (!grade) {
+                    this.showToast('Evaluación no encontrada');
+                    return;
+                }
+
+                this.editingId = id;
+                this.formState = {
+                    docente: grade.docente || '',
+                    grado: grade.grado,
+                    nombre: grade.nombre,
+                    observaciones: grade.observaciones || '',
+                    ratings: { ...grade.ratings }
+                };
+
+                // Cargar valores en el formulario
+                document.getElementById('input-docente').value = this.formState.docente;
+                document.getElementById('input-grado').value = this.formState.grado;
+                this.updateEntrepreneurshipDropdown();
+                document.getElementById('input-observaciones').value = this.formState.observaciones;
+
+                // Seleccionar el nombre del proyecto en el dropdown
+                const nombreSelect = document.getElementById('input-nombre');
+                const customInput = document.getElementById('input-nombre-custom');
+                const projects = (this.rubric.grados && this.rubric.grados[this.formState.grado]) ? this.rubric.grados[this.formState.grado] : [];
+
+                if (projects.includes(this.formState.nombre)) {
+                    nombreSelect.value = this.formState.nombre;
+                    customInput.classList.add('hidden');
+                    customInput.value = '';
+                } else {
+                    nombreSelect.value = 'OTRO';
+                    customInput.classList.remove('hidden');
+                    customInput.value = this.formState.nombre;
+                }
+
+                // Renderizar la tabla con los valores cargados
+                this.renderEvaluationTable();
+                this.updateScoreDisplay();
+
+                // Cambiar a la pestaña de evaluación
+                this.switchTab('evaluacion');
             }
 
             showToast(message) {
