@@ -46,15 +46,11 @@ class RubricManager {
 
 
     async signUp(email, password, nombre) {
-        const basePath = window.location.pathname.includes('/pages/')
-            ? ''
-            : '';
-
         const { data, error } = await supabaseClient.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: window.location.origin + basePath + '/pages/login.html',
+                emailRedirectTo: 'https://fernandoliverosocampo.github.io/rubrica/pages/login.html',
                 data: {
                     nombre: nombre
                 }
@@ -80,12 +76,8 @@ class RubricManager {
     }
 
     async resetPassword(email) {
-        const basePath = window.location.pathname.includes('/pages/')
-            ? ''
-            : '';
-
         const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + basePath + '/pages/cambiar-contrasena.html'
+            redirectTo: 'https://fernandoliverosocampo.github.io/rubrica/pages/cambiar-contrasena.html'
         });
 
         if (error) throw error;
