@@ -94,7 +94,7 @@
                 <!-- Metadatos -->
                 <div class="grid grid-cols-1 md:grid-cols-12 bg-blue-100/70 border-b border-blue-200 p-4 gap-4 items-center">
                     <div class="md:col-span-4 flex items-center space-x-3">
-                        <label for="input-grado" class="font-bold text-xs text-blue-950 uppercase shrink-0">Grado / Salón:</label>
+                        <label for="input-grado" class="font-bold text-xs text-blue-950 uppercase shrink-0" id="grado-label">Grado / Salón:</label>
                         <select id="input-grado" onchange="evalApp.onGradeChange()" 
                                 class="w-full bg-white border border-blue-400 font-semibold text-blue-900 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
                             <option value="6A">6A</option>
@@ -104,7 +104,7 @@
                         </select>
                     </div>
                     <div class="md:col-span-8 flex items-center space-x-3">
-                        <label for="input-nombre" class="font-bold text-xs text-blue-950 uppercase shrink-0">Nombre del emprendimiento:</label>
+                        <label for="input-nombre" class="font-bold text-xs text-blue-950 uppercase shrink-0" id="proyecto-label">Nombre del emprendimiento:</label>
                         <div class="flex-1 flex items-center space-x-2">
                             <select id="input-nombre" onchange="evalApp.onNombreChange()" 
                                     class="w-full bg-white border border-blue-400 rounded px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-xs">
@@ -286,6 +286,14 @@
 
                 document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
                 document.getElementById('page-title').textContent = 'Evaluación - ' + this.rubric.nombre;
+
+                // Actualizar etiquetas personalizadas
+                if (this.rubric.grado_label) {
+                    document.getElementById('grado-label').textContent = this.rubric.grado_label + ':';
+                }
+                if (this.rubric.proyecto_label) {
+                    document.getElementById('proyecto-label').textContent = this.rubric.proyecto_label + ':';
+                }
 
                 // Cargar grados dinámicamente
                 this.loadGradesDropdown();

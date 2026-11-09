@@ -92,13 +92,13 @@
                         <input type="text" id="input-docente" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500" placeholder="Tu nombre">
                     </div>
                     <div>
-                        <label class="block font-bold text-sm text-slate-700 uppercase mb-2">GRADO / SALÓN</label>
+                        <label class="block font-bold text-sm text-slate-700 uppercase mb-2" id="grado-label">GRADO / SALÓN</label>
                         <select id="input-grado" onchange="publicEval.onGradeChange()" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500">
                             <option value="">-- Seleccione --</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block font-bold text-sm text-slate-700 uppercase mb-2">NOMBRE DEL EMPRENDIMIENTO</label>
+                        <label class="block font-bold text-sm text-slate-700 uppercase mb-2" id="proyecto-label">NOMBRE DEL EMPRENDIMIENTO</label>
                         <select id="input-nombre" onchange="publicEval.onNombreChange()" class="w-full bg-white border-2 border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none focus:border-blue-500">
                             <option value="">-- Seleccione --</option>
                         </select>
@@ -289,6 +289,15 @@
                 document.getElementById('evaluation-content').classList.remove('hidden');
                 document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
                 document.getElementById('rubric-name-display-2').textContent = this.rubric.nombre;
+
+                // Actualizar etiquetas personalizadas
+                if (this.rubric.grado_label) {
+                    document.getElementById('grado-label').textContent = this.rubric.grado_label;
+                }
+                if (this.rubric.proyecto_label) {
+                    document.getElementById('proyecto-label').textContent = this.rubric.proyecto_label;
+                }
+
                 this.formState.docente = this.currentDocente;
                 document.getElementById('input-docente').value = this.currentDocente;
                 this.loadGradesDropdown();
@@ -311,6 +320,15 @@
                 document.getElementById('evaluation-content').classList.remove('hidden');
                 document.getElementById('rubric-name-display').textContent = this.rubric.nombre;
                 document.getElementById('rubric-name-display-2').textContent = this.rubric.nombre;
+
+                // Actualizar etiquetas personalizadas
+                if (this.rubric.grado_label) {
+                    document.getElementById('grado-label').textContent = this.rubric.grado_label;
+                }
+                if (this.rubric.proyecto_label) {
+                    document.getElementById('proyecto-label').textContent = this.rubric.proyecto_label;
+                }
+
                 document.getElementById('input-docente').value = docenteName;
                 this.loadGradesDropdown();
                 this.renderEvaluationTable();

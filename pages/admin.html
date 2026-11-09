@@ -131,6 +131,14 @@
                         <label class="block font-bold text-xs text-slate-700 uppercase mb-1">Descripción</label>
                         <textarea id="rubric-description" rows="2" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Descripción breve del propósito de esta rúbrica"></textarea>
                     </div>
+                    <div>
+                        <label class="block font-bold text-xs text-slate-700 uppercase mb-1">Etiqueta del campo de grupos</label>
+                        <input type="text" id="rubric-grado-label" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ej: Grado, Equipo, Salón, Sección">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-xs text-slate-700 uppercase mb-1">Etiqueta del campo de proyectos</label>
+                        <input type="text" id="rubric-proyecto-label" class="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ej: Emprendimiento, Proyecto, Nombre del Equipo">
+                    </div>
                 </div>
 
                 <!-- Grados y Proyectos -->
@@ -329,6 +337,8 @@
                 document.getElementById('modal-title').textContent = 'Editar Rúbrica';
                 document.getElementById('rubric-name').value = rubric.nombre;
                 document.getElementById('rubric-description').value = rubric.descripcion;
+                document.getElementById('rubric-grado-label').value = rubric.grado_label || 'Grado/Salón';
+                document.getElementById('rubric-proyecto-label').value = rubric.proyecto_label || 'Nombre del Emprendimiento';
                 document.getElementById('grades-list').innerHTML = '';
                 document.getElementById('criteria-list').innerHTML = '';
                 this.criteriaCounter = 0;
@@ -432,6 +442,8 @@
             async saveRubric() {
                 const nombre = document.getElementById('rubric-name').value.trim();
                 const descripcion = document.getElementById('rubric-description').value.trim();
+                const gradoLabel = document.getElementById('rubric-grado-label').value.trim();
+                const proyectoLabel = document.getElementById('rubric-proyecto-label').value.trim();
 
                 if (!nombre) {
                     alert('Por favor ingrese el nombre de la rúbrica.');
@@ -485,10 +497,10 @@
                 }
 
                 if (this.editingRubricId) {
-                    await rubricManager.updateRubric(this.editingRubricId, nombre, descripcion, grados, criterios);
+                    await rubricManager.updateRubric(this.editingRubricId, nombre, descripcion, grados, criterios, gradoLabel, proyectoLabel);
                     this.showToast('Rúbrica actualizada correctamente');
                 } else {
-                    await rubricManager.addRubric(nombre, descripcion, grados, criterios);
+                    await rubricManager.addRubric(nombre, descripcion, grados, criterios, gradoLabel, proyectoLabel);
                     this.showToast('Rúbrica creada correctamente');
                 }
 

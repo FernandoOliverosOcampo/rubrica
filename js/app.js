@@ -212,7 +212,7 @@ class RubricManager {
         return code;
     }
 
-    async addRubric(nombre, descripcion, grados, criterios) {
+    async addRubric(nombre, descripcion, grados, criterios, gradoLabel = 'Grado/Salón', proyectoLabel = 'Nombre del Emprendimiento') {
         if (!this.currentUser) {
             throw new Error('Usuario no autenticado');
         }
@@ -223,6 +223,8 @@ class RubricManager {
             descripcion: descripcion || 'Sin descripción',
             grados: grados || {},
             criterios: criterios,
+            grado_label: gradoLabel,
+            proyecto_label: proyectoLabel,
             is_public: false,
             share_code: null
         };
@@ -239,12 +241,14 @@ class RubricManager {
         return data;
     }
 
-    async updateRubric(id, nombre, descripcion, grados, criterios) {
+    async updateRubric(id, nombre, descripcion, grados, criterios, gradoLabel = 'Grado/Salón', proyectoLabel = 'Nombre del Emprendimiento') {
         const updatedRubric = {
             nombre: nombre,
             descripcion: descripcion,
             grados: grados,
             criterios: criterios,
+            grado_label: gradoLabel,
+            proyecto_label: proyectoLabel,
             updated_at: new Date().toISOString()
         };
 
