@@ -50,7 +50,7 @@ class RubricManager {
             email,
             password,
             options: {
-                emailRedirectTo: 'https://fernandoliverosocampo.github.io/rubrica/pages/login.html',
+                emailRedirectTo: 'https://sistemaderubrica.iemarujadelrosarioaguilar.edu.co/pages/login.html',
                 data: {
                     nombre: nombre
                 }
@@ -77,7 +77,7 @@ class RubricManager {
 
     async resetPassword(email) {
         const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://fernandoliverosocampo.github.io/rubrica/pages/cambiar-contrasena.html'
+            redirectTo: 'https://sistemaderubrica.iemarujadelrosarioaguilar.edu.co/pages/cambiar-contrasena.html'
         });
 
         if (error) throw error;
