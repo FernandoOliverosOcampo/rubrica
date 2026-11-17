@@ -306,8 +306,15 @@ class RubricManager {
             notaFinal: item.nota_final,
             ratings: item.ratings,
             observaciones: item.observaciones,
-            fecha: item.fecha
+            fecha: item.fecha,
+            evaluador_id: item.evaluador_id,
+            docente: item.nombre_docente
         }));
+    }
+
+    getCurrentUserName() {
+        if (!this.currentUser) return null;
+        return this.currentUser.user_metadata?.nombre || this.currentUser.email || null;
     }
 
     async addGrade(rubricId, gradeRecord, isAnonymous = false) {
@@ -315,6 +322,7 @@ class RubricManager {
             rubrica_id: rubricId,
             usuario_id: isAnonymous ? null : this.currentUser.id,
             evaluador_id: isAnonymous ? 'anonymous' : this.currentUser.id,
+            nombre_docente: isAnonymous ? (gradeRecord.docente || null) : this.getCurrentUserName(),
             grado: gradeRecord.grado,
             nombre_proyecto: gradeRecord.nombre,
             ratings: gradeRecord.ratings,
@@ -354,7 +362,8 @@ class RubricManager {
             ratings: item.ratings,
             observaciones: item.observaciones,
             fecha: item.fecha,
-            evaluador_id: item.evaluador_id
+            evaluador_id: item.evaluador_id,
+            docente: item.nombre_docente
         }));
     }
 
